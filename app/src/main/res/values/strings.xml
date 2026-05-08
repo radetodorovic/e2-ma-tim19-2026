@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Slagalica KT1</string>
+    <string name="app_name">Slagalica</string>
     <string name="login_title">Prijava</string>
     <string name="register_title">Registracija</string>
     <string name="reset_password_title">Reset lozinke</string>
@@ -20,6 +20,7 @@
     <string name="reset_password">Reset lozinke</string>
     <string name="confirm">Potvrdi</string>
     <string name="back_to_login">Nazad na prijavu</string>
+    <string name="back">Nazad</string>
     <string name="start">Pokreni</string>
     <string name="logout">Odjavi se</string>
     <string name="empty_fields">Popunite sva polja.</string>
@@ -49,6 +50,24 @@
     <string name="confirmation_note">Za KT1 ovo je samo GUI potvrda. Nema slanja email-a ni backend servisa.</string>
     <string name="kt1_home_note">KT1 GUI prototip za funkcionalnosti Studenta 1.</string>
     <string name="available_screens">Dostupni ekrani</string>
+    <string name="profile_title">Profil korisnika</string>
+    <string name="statistics_title">Statistika igraca</string>
+    <string name="statistics_note">Mock statistika za KT1. Podaci nisu ucitani iz baze.</string>
+    <string name="change_avatar">Promeni avatar</string>
+    <string name="avatar_changed_mock">Avatar je promenjen u mock rezimu.</string>
+    <string name="friend_qr">QR kod za poziv prijatelja</string>
+    <string name="qr_placeholder">QR MOCK</string>
+    <string name="quiz_title">Ko zna zna</string>
+    <string name="next_question">Sledece pitanje</string>
+    <string name="choose_answer">Izaberite odgovor.</string>
+    <string name="connections_title">Spojnice</string>
+    <string name="connections_round_header">Runda 1/2 | Na potezu: Igrac 1</string>
+    <string name="connections_timer">Timer: 00:30</string>
+    <string name="connect">Povezi</string>
+    <string name="connected_pairs">Povezani parovi</string>
+    <string name="no_pairs">Nema povezanih parova.</string>
+    <string name="choose_terms">Izaberite pojam iz obe kolone.</string>
+    <string name="incorrect_pair">Netacan par. Prelazi se na sledeci pojam.</string>
     <string name="round_one_two">Runda 1/2</string>
     <string name="player_one_turn">Na potezu: Igrac 1</string>
     <string name="step_timer_value">Timer: 00:10 po koraku</string>

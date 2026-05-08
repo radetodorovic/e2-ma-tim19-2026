@@ -4,6 +4,10 @@
         android:allowBackup="true"
         android:label="@string/app_name"
         android:theme="@style/AppTheme">
+        <activity android:name=".ConnectionsActivity" />
+        <activity android:name=".QuizActivity" />
+        <activity android:name=".StatisticsActivity" />
+        <activity android:name=".ProfileActivity" />
         <activity android:name=".MyNumberActivity" />
         <activity android:name=".StepByStepActivity" />
         <activity android:name=".HomeActivity" />

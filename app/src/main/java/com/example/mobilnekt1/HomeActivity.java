@@ -12,14 +12,14 @@ public class HomeActivity extends BaseKt1Activity {
 
         Button stepByStepButton = findViewById(R.id.button_step_by_step);
         Button myNumberButton = findViewById(R.id.button_my_number);
-        Button logoutButton = findViewById(R.id.button_logout);
+        Button profileButton = findViewById(R.id.button_profile);
+        Button quizButton = findViewById(R.id.button_quiz);
+        Button connectionsButton = findViewById(R.id.button_connections);
 
         stepByStepButton.setOnClickListener(v -> startActivity(new Intent(this, StepByStepActivity.class)));
         myNumberButton.setOnClickListener(v -> startActivity(new Intent(this, MyNumberActivity.class)));
-        logoutButton.setOnClickListener(v -> {
-            Intent intent = new Intent(this, LoginActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            startActivity(intent);
-        });
+        profileButton.setOnClickListener(v -> startActivity(new Intent(this, ProfileActivity.class)));
+        quizButton.setOnClickListener(v -> startActivity(new Intent(this, QuizActivity.class)));
+        connectionsButton.setOnClickListener(v -> startActivity(new Intent(this, ConnectionsActivity.class)));
     }
 }

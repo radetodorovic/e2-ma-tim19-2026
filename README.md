@@ -49,6 +49,9 @@ Ako zelite instalaciju na povezan uredjaj ili emulator:
 - Statistika igraca
 - Ko zna zna
 - Spojnice
+- Asocijacije
+- Skocko
+- Notifikacije
 
 ## Napomena za KT1
 

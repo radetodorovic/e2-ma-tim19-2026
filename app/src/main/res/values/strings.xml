@@ -77,4 +77,25 @@
     <string name="target_placeholder">---</string>
     <string name="numbers_placeholder">-- -- -- -- -- --</string>
     <string name="empty_expression">Izraz jos nije unet.</string>
+    <string name="associations_title">Asocijacije</string>
+    <string name="skocko_title">Skocko</string>
+    <string name="notifications_title">Notifikacije</string>
+    <string name="association_answer_hint">Resenje kolone</string>
+    <string name="check_column">Proveri kolonu</string>
+    <string name="check_final">Proveri konacno</string>
+    <string name="final_solution">Konacno resenje</string>
+    <string name="final_solution_hint">Unesite konacno resenje</string>
+    <string name="solved_columns">Resene kolone</string>
+    <string name="no_solved_columns">Nema resenih kolona.</string>
+    <string name="incorrect_answer">Netacan odgovor.</string>
+    <string name="column_already_solved">Kolona je vec resena.</string>
+    <string name="current_guess">Trenutna kombinacija</string>
+    <string name="confirm_attempt">Potvrdi pokusaj</string>
+    <string name="choose_four_symbols">Izaberite 4 znaka.</string>
+    <string name="attempt_history">Istorija pokusaja</string>
+    <string name="all_notifications">Sve</string>
+    <string name="unread_notifications">Neprocitane</string>
+    <string name="notification_channels_title">Kanali notifikacija</string>
+    <string name="notification_marked_read">Notifikacija je oznacena kao procitana.</string>
+    <string name="no_notifications">Nema notifikacija za izabrani filter.</string>
 </resources>

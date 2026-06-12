@@ -25,6 +25,7 @@
             android:orientation="vertical">
 
             <TextView
+                android:id="@+id/text_step_round"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/round_one_two"
@@ -33,6 +34,7 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/text_step_turn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
@@ -41,10 +43,11 @@
                 android:textSize="16sp" />
 
             <TextView
+                android:id="@+id/text_step_timer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:text="@string/step_timer_value"
+                android:text="01:10"
                 android:textColor="@color/warning"
                 android:textSize="16sp"
                 android:textStyle="bold" />
@@ -60,12 +63,13 @@
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/text_step_target_placeholder"
+                android:id="@+id/text_step_score"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
+                android:text="@string/score_zero"
                 android:textColor="@color/text_secondary"
-                android:textSize="14sp" />
+                android:textSize="16sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -95,14 +99,5 @@
             android:textAllCaps="false"
             android:textColor="@android:color/white" />
 
-        <Button
-            android:id="@+id/button_next_step"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:background="@drawable/button_secondary"
-            android:text="@string/next_step"
-            android:textAllCaps="false"
-            android:textColor="@android:color/white" />
     </LinearLayout>
 </ScrollView>

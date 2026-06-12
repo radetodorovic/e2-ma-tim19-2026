@@ -29,13 +29,41 @@
             android:textSize="16sp" />
 
         <Button
-            android:id="@+id/button_back_to_login"
+            android:id="@+id/button_check_verification"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
             android:background="@drawable/button_primary"
-            android:text="@string/back_to_login"
+            android:text="@string/check_verification"
             android:textAllCaps="false"
             android:textColor="@android:color/white" />
+
+        <Button
+            android:id="@+id/button_resend_verification"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/button_secondary"
+            android:text="@string/resend_verification"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white" />
+
+        <ProgressBar
+            android:id="@+id/auth_progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="12dp"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/button_back_to_login"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/button_outline"
+            android:text="@string/back_to_login"
+            android:textAllCaps="false"
+            android:textColor="@color/accent" />
     </LinearLayout>
 </LinearLayout>

@@ -38,6 +38,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
                 android:background="@drawable/input_background"
+                android:autofillHints="username"
                 android:hint="@string/email_or_username"
                 android:inputType="textEmailAddress"
                 android:minHeight="48dp" />
@@ -48,6 +49,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:background="@drawable/input_background"
+                android:autofillHints="password"
                 android:hint="@string/password"
                 android:inputType="textPassword"
                 android:minHeight="48dp" />
@@ -61,6 +63,14 @@
                 android:text="@string/login"
                 android:textAllCaps="false"
                 android:textColor="@android:color/white" />
+
+            <ProgressBar
+                android:id="@+id/auth_progress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="12dp"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/link_register"

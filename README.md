@@ -1,6 +1,7 @@
 # Slagalica
 
-Android native aplikacija za predmet Mobilne aplikacije. Projekat je KT1 GUI prototip uradjen u Java + XML tehnologiji.
+Android native aplikacija za predmet Mobilne aplikacije, uradjena u Java + XML tehnologiji.
+Registracija, prijava i igre Studenta 1 (`Korak po korak` i `Moj broj`) prosirene su za KT2.
 
 ## Preduslovi
 
@@ -17,7 +18,8 @@ Android native aplikacija za predmet Mobilne aplikacije. Projekat je KT1 GUI pro
 4. Izabrati emulator ili povezan uredjaj.
 5. Kliknuti `Run`.
 
-Pocetni ekran aplikacije je `LoginActivity`. Za KT1 login je mock, pa unos vodi ka glavnom meniju bez backend provere.
+Pocetni ekran aplikacije je `LoginActivity`. Prijava i registracija koriste Firebase Authentication
+i Cloud Firestore, ukljucujuci potvrdu email adrese i prijavu korisnickim imenom.
 
 ## Pokretanje iz terminala
 
@@ -32,6 +34,10 @@ Debug APK se generise u:
 ```text
 app/build/outputs/apk/debug/app-debug.apk
 ```
+
+Za KT2 registraciju i prijavu potrebno je povezati timski Firebase projekat prema uputstvu u
+[`FIREBASE_SETUP.md`](FIREBASE_SETUP.md). Bez `app/google-services.json` aplikacija se gradi,
+ali ekrani autentifikacije prikazuju jasnu konfiguracionu gresku umesto mock prijave.
 
 Ako zelite instalaciju na povezan uredjaj ili emulator:
 
@@ -53,6 +59,10 @@ Ako zelite instalaciju na povezan uredjaj ili emulator:
 - Skocko
 - Notifikacije
 
-## Napomena za KT1
+## Trenutni opseg KT2
 
-Aplikacija koristi mock podatke. Nisu implementirani backend, baza, Firebase, pravi multiplayer, trajno cuvanje rezultata niti realna autentifikacija.
+- Student 1: Firebase autentifikacija, email potvrda, reset/promena lozinke, `Korak po korak`
+  i `Moj broj` sa tajmerima, bodovanjem i shake senzorom.
+- Igre se trenutno mogu proveriti u lokalnom hot-seat rezimu za dva igraca.
+- Mrezno uparivanje dva uredjaja, zajednicki tok cele partije i trajno cuvanje rezultata pripadaju
+  zajednickom sistemu partije koji jos nije povezan sa pojedinacnim igrama.

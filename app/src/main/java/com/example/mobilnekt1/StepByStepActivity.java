@@ -1,17 +1,37 @@
 package com.example.mobilnekt1;
 
 import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.example.mobilnekt1.games.stepbystep.StepByStepEngine;
+import com.example.mobilnekt1.games.stepbystep.StepPuzzle;
+import com.example.mobilnekt1.games.stepbystep.StepPuzzleRepository;
+
+import java.util.Locale;
+
 public class StepByStepActivity extends BaseKt1Activity {
-    private int openedSteps = 1;
-    private int points = 20;
     private LinearLayout hintsContainer;
+    private TextView roundView;
+    private TextView turnView;
+    private TextView timerView;
     private TextView pointsView;
+    private TextView scoreView;
     private EditText answerInput;
+    private Button confirmButton;
+
+    private CountDownTimer timer;
+    private StepPuzzle puzzle;
+    private int roundIndex;
+    private int openedHints = 1;
+    private int playerOneScore;
+    private int playerTwoScore;
+    private boolean stealPhase;
+    private long remainingMillis;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -19,78 +39,214 @@ public class StepByStepActivity extends BaseKt1Activity {
         setContentView(R.layout.activity_step_by_step);
 
         hintsContainer = findViewById(R.id.container_hints);
+        roundView = findViewById(R.id.text_step_round);
+        turnView = findViewById(R.id.text_step_turn);
+        timerView = findViewById(R.id.text_step_timer);
         pointsView = findViewById(R.id.text_step_points);
+        scoreView = findViewById(R.id.text_step_score);
         answerInput = findViewById(R.id.input_step_answer);
-        Button confirmButton = findViewById(R.id.button_confirm_step_answer);
-        Button nextButton = findViewById(R.id.button_next_step);
-        TextView targetPlaceholder = findViewById(R.id.text_step_target_placeholder);
-        targetPlaceholder.setText("Mock pojam: " + MockGameData.STEP_TARGET);
+        confirmButton = findViewById(R.id.button_confirm_step_answer);
+        confirmButton.setOnClickListener(v -> checkAnswer());
 
-        confirmButton.setOnClickListener(v -> showRoundResult());
-        nextButton.setOnClickListener(v -> openNextStep());
-        renderHints();
+        if (savedInstanceState != null) {
+            roundIndex = savedInstanceState.getInt("roundIndex");
+            openedHints = savedInstanceState.getInt("openedHints", 1);
+            playerOneScore = savedInstanceState.getInt("playerOneScore");
+            playerTwoScore = savedInstanceState.getInt("playerTwoScore");
+            stealPhase = savedInstanceState.getBoolean("stealPhase");
+            remainingMillis = savedInstanceState.getLong("remainingMillis");
+            puzzle = StepPuzzleRepository.forRound(roundIndex);
+            render();
+            startTimer(Math.max(1000, remainingMillis));
+        } else {
+            startRound();
+        }
     }
 
-    private void openNextStep() {
-        if (openedSteps < MockGameData.STEP_HINTS.length) {
-            openedSteps++;
-            points = Math.max(8, 20 - ((openedSteps - 1) * 2));
-            renderHints();
-        } else {
-            showInfoDialog(getString(R.string.step_by_step_title),
-                    "Svi koraci su otvoreni. Protivnik bi u pravoj igri imao sansu za 5 bodova.");
+    private void startRound() {
+        cancelTimer();
+        puzzle = StepPuzzleRepository.forRound(roundIndex);
+        openedHints = 1;
+        stealPhase = false;
+        remainingMillis = StepByStepEngine.ROUND_SECONDS * 1000L;
+        answerInput.setText("");
+        answerInput.setEnabled(true);
+        confirmButton.setEnabled(true);
+        render();
+        startTimer(remainingMillis);
+    }
+
+    private void startTimer(long durationMillis) {
+        cancelTimer();
+        timer = new CountDownTimer(durationMillis, 250) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                remainingMillis = millisUntilFinished;
+                if (!stealPhase) {
+                    int elapsedSeconds = StepByStepEngine.ROUND_SECONDS
+                            - (int) Math.ceil(millisUntilFinished / 1000.0);
+                    int expectedHints = Math.min(StepByStepEngine.HINT_COUNT, 1 + elapsedSeconds / 10);
+                    if (expectedHints != openedHints) {
+                        openedHints = expectedHints;
+                        renderHints();
+                        renderPoints();
+                    }
+                }
+                renderTimer();
+            }
+
+            @Override
+            public void onFinish() {
+                remainingMillis = 0;
+                if (stealPhase) {
+                    finishRound(false);
+                } else {
+                    beginStealPhase();
+                }
+            }
+        }.start();
+    }
+
+    private void checkAnswer() {
+        String answer = answerInput.getText().toString().trim();
+        if (answer.isEmpty()) {
+            answerInput.setError(getString(R.string.required_field));
+            return;
         }
+        if (StepByStepEngine.matches(answer, puzzle.solution)) {
+            int scorer = stealPhase ? otherPlayer() : activePlayer();
+            int points = stealPhase ? 5 : StepByStepEngine.pointsForHint(openedHints);
+            addScore(scorer, points);
+            showInfoDialog(getString(R.string.correct_answer_title),
+                    getString(R.string.step_points_awarded, scorer, points));
+            finishRound(true);
+        } else {
+            answerInput.setText("");
+            showToast(R.string.incorrect_answer);
+        }
+    }
+
+    private void beginStealPhase() {
+        stealPhase = true;
+        openedHints = StepByStepEngine.HINT_COUNT;
+        remainingMillis = StepByStepEngine.STEAL_SECONDS * 1000L;
+        answerInput.setText("");
+        render();
+        showToast(R.string.step_steal_started);
+        startTimer(remainingMillis);
+    }
+
+    private void finishRound(boolean solved) {
+        cancelTimer();
+        answerInput.setEnabled(false);
+        confirmButton.setEnabled(false);
+        if (!solved) {
+            showInfoDialog(getString(R.string.round_result),
+                    getString(R.string.step_round_unsolved, puzzle.solution));
+        }
+        if (roundIndex == 0) {
+            roundIndex = 1;
+            hintsContainer.postDelayed(this::startRound, solved ? 900 : 1600);
+        } else {
+            hintsContainer.postDelayed(this::showGameResult, solved ? 900 : 1600);
+        }
+    }
+
+    private void showGameResult() {
+        String winner;
+        if (playerOneScore == playerTwoScore) {
+            winner = getString(R.string.draw_result);
+        } else {
+            winner = getString(R.string.player_wins,
+                    playerOneScore > playerTwoScore ? 1 : 2);
+        }
+        showFinishDialog(getString(R.string.game_result),
+                getString(R.string.two_player_score, playerOneScore, playerTwoScore) + "\n" + winner);
+    }
+
+    private int activePlayer() {
+        return roundIndex + 1;
+    }
+
+    private int otherPlayer() {
+        return activePlayer() == 1 ? 2 : 1;
+    }
+
+    private void addScore(int player, int points) {
+        if (player == 1) {
+            playerOneScore += points;
+        } else {
+            playerTwoScore += points;
+        }
+        renderScore();
+    }
+
+    private void render() {
+        roundView.setText(getString(R.string.round_value, roundIndex + 1, 2));
+        turnView.setText(getString(stealPhase ? R.string.steal_turn_value : R.string.player_turn_value,
+                stealPhase ? otherPlayer() : activePlayer()));
+        renderHints();
+        renderPoints();
+        renderScore();
+        renderTimer();
     }
 
     private void renderHints() {
         hintsContainer.removeAllViews();
-        for (int i = 0; i < MockGameData.STEP_HINTS.length; i++) {
+        for (int i = 0; i < StepByStepEngine.HINT_COUNT; i++) {
             TextView hintView = new TextView(this);
             hintView.setTextSize(16);
             hintView.setTextColor(getResources().getColor(R.color.text_primary));
             hintView.setPadding(16, 12, 16, 12);
-            if (i < openedSteps) {
-                hintView.setText((i + 1) + ". " + MockGameData.STEP_HINTS[i]);
-                hintView.setBackgroundResource(R.drawable.card_background);
-            } else {
-                hintView.setText((i + 1) + ". Sakriven korak");
-                hintView.setBackgroundResource(R.drawable.input_background);
-            }
+            hintView.setText(i < openedHints
+                    ? getString(R.string.numbered_hint, i + 1, puzzle.hints[i])
+                    : getString(R.string.hidden_hint, i + 1));
+            hintView.setBackgroundResource(i < openedHints
+                    ? R.drawable.card_background : R.drawable.input_background);
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-            );
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
             params.setMargins(0, 0, 0, 10);
             hintsContainer.addView(hintView, params);
         }
-        pointsView.setText("Moguci bodovi: " + points);
     }
 
-    private void showRoundResult() {
-        String answer = answerInput.getText().toString().trim();
-        if (answer.isEmpty()) {
-            showToast(R.string.empty_fields);
-            return;
-        }
-        if (answer.equalsIgnoreCase(MockGameData.STEP_TARGET)) {
-            String message = "Tacan odgovor: " + answer
-                    + "\nOsvojeni bodovi u prototipu: " + points
-                    + "\nRunda 1/2 je zavrsena.";
-            showFinishDialog(getString(R.string.round_result), message);
-            return;
-        }
+    private void renderPoints() {
+        pointsView.setText(stealPhase
+                ? getString(R.string.possible_points, 5)
+                : getString(R.string.possible_points, StepByStepEngine.pointsForHint(openedHints)));
+    }
 
-        if (openedSteps < MockGameData.STEP_HINTS.length) {
-            showInfoDialog(getString(R.string.step_by_step_title),
-                    "Odgovor nije tacan. Otvorite sledeci korak i pokusajte ponovo.");
-            answerInput.setText("");
-            return;
-        }
+    private void renderScore() {
+        scoreView.setText(getString(R.string.two_player_score, playerOneScore, playerTwoScore));
+    }
 
-        String message = "Unet odgovor: " + answer
-                + "\nMock tacan pojam: " + MockGameData.STEP_TARGET
-                + "\nNema vise koraka. Protivnik bi u pravoj igri imao sansu za 5 bodova."
-                + "\nRunda 1/2 je zavrsena.";
-        showFinishDialog(getString(R.string.round_result), message);
+    private void renderTimer() {
+        long seconds = (long) Math.ceil(remainingMillis / 1000.0);
+        timerView.setText(String.format(Locale.getDefault(), "%02d:%02d", seconds / 60, seconds % 60));
+    }
+
+    private void cancelTimer() {
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("roundIndex", roundIndex);
+        outState.putInt("openedHints", openedHints);
+        outState.putInt("playerOneScore", playerOneScore);
+        outState.putInt("playerTwoScore", playerTwoScore);
+        outState.putBoolean("stealPhase", stealPhase);
+        outState.putLong("remainingMillis", remainingMillis);
+    }
+
+    @Override
+    protected void onDestroy() {
+        cancelTimer();
+        super.onDestroy();
     }
 }

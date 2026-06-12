@@ -111,6 +111,26 @@
                 android:text="@string/profile_title"
                 android:textAllCaps="false"
                 android:textColor="@color/accent" />
+
+            <Button
+                android:id="@+id/button_change_password"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/button_outline"
+                android:text="@string/change_password"
+                android:textAllCaps="false"
+                android:textColor="@color/accent" />
+
+            <Button
+                android:id="@+id/button_logout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/button_secondary"
+                android:text="@string/logout"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white" />
         </LinearLayout>
     </LinearLayout>
 </ScrollView>

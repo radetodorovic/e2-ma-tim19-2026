@@ -1,11 +1,12 @@
 package com.example.mobilnekt1;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.widget.EditText;
 import android.widget.Toast;
 
-public abstract class BaseKt1Activity extends Activity {
+import androidx.appcompat.app.AppCompatActivity;
+
+public abstract class BaseKt1Activity extends AppCompatActivity {
     protected boolean isBlank(EditText editText) {
         return editText.getText().toString().trim().isEmpty();
     }

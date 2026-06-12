@@ -1,6 +1,7 @@
 package com.example.mobilnekt1;
 
 import android.os.Bundle;
+import android.graphics.Typeface;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridLayout;
@@ -47,7 +48,7 @@ public class AssociationsActivity extends BaseKt1Activity {
             title.setText("Kolona " + labels[column]);
             title.setTextColor(getResources().getColor(R.color.text_primary));
             title.setTextSize(18);
-            title.setTypeface(null, 1);
+            title.setTypeface(null, Typeface.BOLD);
             columnLayout.addView(title);
 
             GridLayout grid = new GridLayout(this);

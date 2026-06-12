@@ -29,6 +29,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/input_background"
+                android:autofillHints="emailAddress"
                 android:hint="@string/email"
                 android:inputType="textEmailAddress"
                 android:minHeight="48dp" />
@@ -39,6 +40,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:background="@drawable/input_background"
+                android:autofillHints="newUsername"
                 android:hint="@string/username"
                 android:inputType="text"
                 android:minHeight="48dp" />
@@ -49,6 +51,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:background="@drawable/input_background"
+                android:importantForAutofill="no"
                 android:hint="@string/region"
                 android:inputType="text"
                 android:minHeight="48dp" />
@@ -59,6 +62,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:background="@drawable/input_background"
+                android:autofillHints="newPassword"
                 android:hint="@string/password"
                 android:inputType="textPassword"
                 android:minHeight="48dp" />
@@ -69,6 +73,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:background="@drawable/input_background"
+                android:autofillHints="newPassword"
                 android:hint="@string/repeat_password"
                 android:inputType="textPassword"
                 android:minHeight="48dp" />
@@ -82,6 +87,14 @@
                 android:text="@string/register"
                 android:textAllCaps="false"
                 android:textColor="@android:color/white" />
+
+            <ProgressBar
+                android:id="@+id/auth_progress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="12dp"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/link_login"

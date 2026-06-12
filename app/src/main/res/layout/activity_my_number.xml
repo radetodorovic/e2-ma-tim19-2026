@@ -25,6 +25,7 @@
             android:orientation="vertical">
 
             <TextView
+                android:id="@+id/text_my_number_header"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/my_number_header"
@@ -33,10 +34,11 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/text_my_number_timer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:text="@string/my_number_timer_value"
+                android:text="01:00"
                 android:textColor="@color/warning"
                 android:textSize="16sp"
                 android:textStyle="bold" />
@@ -46,7 +48,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:text="@string/mock_points_zero"
+                android:text="@string/score_zero"
                 android:textColor="@color/accent_dark"
                 android:textSize="16sp"
                 android:textStyle="bold" />
@@ -87,10 +89,11 @@
                 android:textColor="@android:color/white" />
 
             <TextView
+                android:id="@+id/text_shake_status"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="@string/shake_placeholder"
+                android:text="@string/shake_ready"
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp" />
         </LinearLayout>

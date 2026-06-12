@@ -4,39 +4,57 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import androidx.lifecycle.ViewModelProvider;
+import com.example.mobilnekt1.profile.domain.PlayerStats;
+import com.example.mobilnekt1.profile.presentation.ProfileViewModel;
+import java.util.Locale;
 
 public class StatisticsActivity extends BaseKt1Activity {
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    private LinearLayout container;
+    @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_statistics);
+        container = findViewById(R.id.container_statistics);
+        ProfileViewModel viewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
+        viewModel.getState().observe(this, state -> render(state.stats));
+        viewModel.getError().observe(this, event -> {
+            String message = event.getIfNotHandled();
+            if (message != null) showInfoDialog(getString(R.string.profile_error_title), message);
+        });
+    }
 
-        LinearLayout container = findViewById(R.id.container_statistics);
-        for (String statistic : MockStudentTwoData.STATISTICS) {
-            TextView view = new TextView(this);
-            view.setText(statistic);
-            view.setTextColor(getResources().getColor(R.color.text_primary));
-            view.setTextSize(16);
-            view.setBackgroundResource(R.drawable.card_background);
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-            );
-            params.setMargins(0, 0, 0, 10);
-            container.addView(view, params);
-        }
+    private void render(PlayerStats stats) {
+        while (container.getChildCount() > 1) container.removeViewAt(1);
+        addCard(getString(R.string.average_scores_title) + "\n" +
+                "Ko zna zna: " + average(stats, "koZnaZna") + "\n" +
+                "Spojnice: " + average(stats, "spojnice") + "\n" +
+                "Moj broj: " + average(stats, "myNumber") + "\n" +
+                "Korak po korak: " + average(stats, "stepByStep") + "\n" +
+                "Asocijacije: " + average(stats, "asocijacije") + "\n" +
+                "Skocko: " + average(stats, "skocko"));
+        addCard(getString(R.string.quiz_correct_wrong_value, stats.koZnaZnaCorrect, stats.koZnaZnaWrong));
+        double connectionPercent = stats.spojniceTotalPairs == 0 ? 0
+                : stats.spojniceCorrectPairs * 100.0 / stats.spojniceTotalPairs;
+        addCard(getString(R.string.connections_percent_value, connectionPercent));
+        addCard(getString(R.string.total_matches_value, stats.totalMatches));
+        double total = stats.wins + stats.losses;
+        double wins = total == 0 ? 0 : stats.wins * 100.0 / total;
+        double losses = total == 0 ? 0 : stats.losses * 100.0 / total;
+        addCard(getString(R.string.win_loss_value, wins, losses));
+        Button back = new Button(this);
+        back.setText(R.string.back); back.setAllCaps(false); back.setOnClickListener(v -> finish());
+        container.addView(back);
+    }
 
-        Button backButton = new Button(this);
-        backButton.setText(R.string.back);
-        backButton.setAllCaps(false);
-        backButton.setTextColor(getResources().getColor(R.color.accent));
-        backButton.setBackgroundResource(R.drawable.button_outline);
-        backButton.setOnClickListener(v -> finish());
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        params.setMargins(0, 8, 0, 0);
-        container.addView(backButton, params);
+    private String average(PlayerStats stats, String game) {
+        Double value = stats.averageScoreByGame == null ? null : stats.averageScoreByGame.get(game);
+        return String.format(Locale.getDefault(), "%.1f", value == null ? 0 : value);
+    }
+    private void addCard(String text) {
+        TextView view = new TextView(this); view.setText(text); view.setTextSize(16);
+        view.setTextColor(getResources().getColor(R.color.text_primary));
+        view.setBackgroundResource(R.drawable.card_background);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
+        params.setMargins(0, 0, 0, 10); container.addView(view, params);
     }
 }

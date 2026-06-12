@@ -25,6 +25,7 @@
             android:orientation="vertical">
 
             <TextView
+                android:id="@+id/text_connections_header"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/connections_round_header"
@@ -33,6 +34,7 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/text_connections_timer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"

@@ -30,7 +30,71 @@ service cloud.firestore {
         && request.resource.data.tokens == 5
         && request.resource.data.stars == 0
         && request.resource.data.league == 0;
-      allow update, delete: if false;
+      allow update: if ownsDocument(userId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'avatarId', 'avatarFrame', 'qrCodeValue'
+        ]);
+      allow delete: if false;
+    }
+
+    match /playerStats/{userId} {
+      allow read, create, update: if ownsDocument(userId);
+      allow delete: if false;
+    }
+
+    match /matches/{matchId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly([
+          'player1Id', 'player1Name', 'player2Id', 'player2Name',
+          'status', 'currentGame', 'currentGameVersion', 'currentTurnPlayerId', 'winnerId',
+          'player1Score', 'player2Score', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.player1Id == request.auth.uid
+        && request.resource.data.player2Id == null
+        && request.resource.data.status == 'waiting'
+        && request.resource.data.currentGame == 'none'
+        && request.resource.data.currentGameVersion == 0;
+
+      allow update: if signedIn() && (
+        (
+          resource.data.status == 'waiting'
+          && resource.data.player2Id == null
+          && request.resource.data.player1Id == resource.data.player1Id
+          && request.resource.data.player2Id == request.auth.uid
+          && request.resource.data.status == 'active'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'player2Id', 'player2Name', 'status', 'updatedAt'
+          ])
+        )
+        ||
+        (
+          request.auth.uid in [resource.data.player1Id, resource.data.player2Id]
+          && request.resource.data.player1Id == resource.data.player1Id
+          && request.resource.data.player2Id == resource.data.player2Id
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'status', 'currentGame', 'currentGameVersion', 'currentTurnPlayerId', 'winnerId',
+            'player1Score', 'player2Score', 'updatedAt'
+          ])
+        )
+      );
+
+      allow delete: if false;
+
+      match /games/{gameId} {
+        function parentMatch() {
+          return get(/databases/$(database)/documents/matches/$(matchId)).data;
+        }
+
+        function isParticipant() {
+          return signedIn()
+            && request.auth.uid in [parentMatch().player1Id, parentMatch().player2Id];
+        }
+
+        allow read, create, update: if isParticipant();
+        allow delete: if false;
+      }
     }
   }
 }

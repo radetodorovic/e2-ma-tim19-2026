@@ -115,6 +115,7 @@
             android:orientation="vertical">
 
             <TextView
+                android:id="@+id/text_profile_qr"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/friend_qr"

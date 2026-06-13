@@ -3,6 +3,7 @@ package com.example.mobilnekt1.games.quiz.data;
 import android.content.Context;
 
 import com.example.mobilnekt1.core.data.FirebaseProvider;
+import com.example.mobilnekt1.games.content.GameContentRepository;
 import com.example.mobilnekt1.games.quiz.domain.QuizQuestion;
 import com.example.mobilnekt1.games.quiz.domain.QuizScoringEngine;
 import com.example.mobilnekt1.games.shared.GameActionCallback;
@@ -13,7 +14,6 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,10 +21,12 @@ import java.util.Map;
 public final class QuizGameRepository {
     public static final int QUESTION_SECONDS = 5;
     private final FirebaseProvider firebase;
+    private final GameContentRepository contentRepository;
     private ListenerRegistration registration;
 
     public QuizGameRepository(Context context) {
         firebase = FirebaseProvider.getInstance(context);
+        contentRepository = new GameContentRepository(firebase.getFirestore());
     }
 
     public String currentUserId() {
@@ -33,6 +35,16 @@ public final class QuizGameRepository {
     }
 
     public void initialize(String matchId, GameActionCallback callback) {
+        contentRepository.loadQuizQuestions(new GameContentRepository.Callback<List<QuizQuestion>>() {
+            @Override public void onSuccess(List<QuizQuestion> questions) {
+                initializeWithQuestions(matchId, questions, callback);
+            }
+            @Override public void onError(String message) { callback.onError(message); }
+        });
+    }
+
+    private void initializeWithQuestions(String matchId, List<QuizQuestion> questions,
+                                         GameActionCallback callback) {
         DocumentReference matchRef = matchRef(matchId);
         DocumentReference gameRef = gameRef(matchId);
         firebase.getFirestore().runTransaction(transaction -> {
@@ -45,7 +57,7 @@ public final class QuizGameRepository {
                 data.put("status", "active");
                 data.put("currentQuestionIndex", 0);
                 data.put("deadlineMillis", System.currentTimeMillis() + QUESTION_SECONDS * 1000L);
-                data.put("questions", questionMaps());
+                data.put("questions", questionMaps(questions));
                 data.put("player1Answer", null);
                 data.put("player2Answer", null);
                 data.put("player1AnsweredAt", null);
@@ -156,18 +168,9 @@ public final class QuizGameRepository {
                 .addOnFailureListener(error -> callback.onError(message(error)));
     }
 
-    private List<QuizQuestion> sampleQuestions() {
-        return Arrays.asList(
-                new QuizQuestion("Koji je glavni grad Srbije?", Arrays.asList("Novi Sad", "Beograd", "Nis", "Kragujevac"), 1),
-                new QuizQuestion("Koja planeta je najbliza Suncu?", Arrays.asList("Venera", "Mars", "Merkur", "Zemlja"), 2),
-                new QuizQuestion("Koliko kontinenata postoji?", Arrays.asList("Pet", "Sest", "Sedam", "Osam"), 2),
-                new QuizQuestion("Ko je napisao Na Drini cuprija?", Arrays.asList("Mesa Selimovic", "Ivo Andric", "Branko Copic", "Milos Crnjanski"), 1),
-                new QuizQuestion("Koji hemijski simbol predstavlja zlato?", Arrays.asList("Ag", "Fe", "Au", "Cu"), 2));
-    }
-
-    private List<Map<String, Object>> questionMaps() {
+    private List<Map<String, Object>> questionMaps(List<QuizQuestion> questions) {
         List<Map<String, Object>> result = new ArrayList<>();
-        for (QuizQuestion question : sampleQuestions()) {
+        for (QuizQuestion question : questions) {
             Map<String, Object> map = new HashMap<>();
             map.put("text", question.text);
             map.put("answers", question.answers);

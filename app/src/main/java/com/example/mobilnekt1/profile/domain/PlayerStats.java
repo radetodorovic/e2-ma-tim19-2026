@@ -11,6 +11,10 @@ public final class PlayerStats {
     public long koZnaZnaWrong;
     public long spojniceCorrectPairs;
     public long spojniceTotalPairs;
+    public long myNumberExactRounds;
+    public long myNumberTotalRounds;
+    public long stepRoundsPlayed;
+    public Map<String, Long> stepSolvedByHint = new HashMap<>();
     public Map<String, Double> averageScoreByGame = new HashMap<>();
     public Map<String, Long> gamesPlayedByGame = new HashMap<>();
 

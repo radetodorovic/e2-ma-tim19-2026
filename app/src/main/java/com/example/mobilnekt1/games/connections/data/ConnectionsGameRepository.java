@@ -3,6 +3,7 @@ package com.example.mobilnekt1.games.connections.data;
 import android.content.Context;
 
 import com.example.mobilnekt1.core.data.FirebaseProvider;
+import com.example.mobilnekt1.games.content.GameContentRepository;
 import com.example.mobilnekt1.games.shared.GameActionCallback;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
@@ -11,7 +12,6 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,19 +19,38 @@ import java.util.Map;
 public final class ConnectionsGameRepository {
     private static final long PHASE_MILLIS = 30_000L;
     private final FirebaseProvider firebase;
+    private final GameContentRepository contentRepository;
     private ListenerRegistration registration;
 
-    public ConnectionsGameRepository(Context context) { firebase = FirebaseProvider.getInstance(context); }
+    public ConnectionsGameRepository(Context context) {
+        firebase = FirebaseProvider.getInstance(context);
+        contentRepository = new GameContentRepository(firebase.getFirestore());
+    }
     public String currentUserId() { FirebaseUser user = firebase.getCurrentUser(); return user == null ? null : user.getUid(); }
 
     public void initialize(String matchId, GameActionCallback callback) {
+        contentRepository.loadConnectionsPuzzles(
+                new GameContentRepository.Callback<List<GameContentRepository.ConnectionsPuzzle>>() {
+                    @Override public void onSuccess(List<GameContentRepository.ConnectionsPuzzle> puzzles) {
+                        initializeWithPuzzles(matchId, puzzles, callback);
+                    }
+                    @Override public void onError(String message) { callback.onError(message); }
+                });
+    }
+
+    private void initializeWithPuzzles(String matchId,
+                                       List<GameContentRepository.ConnectionsPuzzle> puzzles,
+                                       GameActionCallback callback) {
         DocumentReference matchRef = matchRef(matchId);
         DocumentReference gameRef = gameRef(matchId);
         firebase.getFirestore().runTransaction(transaction -> {
             DocumentSnapshot match = transaction.get(matchRef);
             requireMatchParticipant(match);
             if (!transaction.get(gameRef).exists()) {
-                Map<String, Object> data = roundData(0, match.getString("player1Id"));
+                Map<String, Object> data = roundData(0, match.getString("player1Id"), puzzles.get(0));
+                data.put("round2LeftItems", puzzles.get(1).leftItems);
+                data.put("round2RightItems", puzzles.get(1).rightItems);
+                data.put("round2CorrectMatches", puzzles.get(1).correctMatches);
                 data.put("player1Id", match.getString("player1Id"));
                 data.put("player2Id", match.getString("player2Id"));
                 data.put("player1Score", 0);
@@ -147,10 +166,13 @@ public final class ConnectionsGameRepository {
             updates.put("deadlineMillis", 0);
             return;
         }
-        updates.putAll(roundData(1, game.getString("player2Id")));
+        updates.putAll(roundData(1, game.getString("player2Id"), new GameContentRepository.ConnectionsPuzzle(
+                stringList(game.get("round2LeftItems")), stringList(game.get("round2RightItems")),
+                integerList(game.get("round2CorrectMatches")))));
     }
 
-    private Map<String, Object> roundData(int round, String starter) {
+    private Map<String, Object> roundData(int round, String starter,
+                                          GameContentRepository.ConnectionsPuzzle puzzle) {
         Map<String, Object> data = new HashMap<>();
         data.put("round", round);
         data.put("phase", "main");
@@ -159,15 +181,9 @@ public final class ConnectionsGameRepository {
         data.put("deadlineMillis", System.currentTimeMillis() + PHASE_MILLIS);
         data.put("currentLeft", 0);
         data.put("solvedLeft", new ArrayList<>());
-        if (round == 0) {
-            data.put("leftItems", Arrays.asList("Nikola Tesla", "Mihajlo Pupin", "Ivo Andric", "Novak Djokovic", "Marina Abramovic"));
-            data.put("rightItems", Arrays.asList("Tenis", "Performans", "Na Drini cuprija", "Naizmenicna struja", "Kalemovi"));
-            data.put("correctMatches", Arrays.asList(3, 4, 2, 0, 1));
-        } else {
-            data.put("leftItems", Arrays.asList("Francuska", "Italija", "Spanija", "Grcka", "Austrija"));
-            data.put("rightItems", Arrays.asList("Bec", "Atina", "Madrid", "Rim", "Pariz"));
-            data.put("correctMatches", Arrays.asList(4, 3, 2, 1, 0));
-        }
+        data.put("leftItems", puzzle.leftItems);
+        data.put("rightItems", puzzle.rightItems);
+        data.put("correctMatches", puzzle.correctMatches);
         data.put("updatedAt", FieldValue.serverTimestamp());
         return data;
     }
@@ -180,6 +196,14 @@ public final class ConnectionsGameRepository {
     @SuppressWarnings("unchecked") private List<Long> longList(Object value) {
         List<Long> result = new ArrayList<>();
         if (value instanceof List) for (Object item : (List<?>) value) result.add(((Number) item).longValue());
+        return result;
+    }
+    @SuppressWarnings("unchecked") private List<String> stringList(Object value) {
+        return value instanceof List ? new ArrayList<>((List<String>) value) : new ArrayList<>();
+    }
+    private List<Integer> integerList(Object value) {
+        List<Integer> result = new ArrayList<>();
+        if (value instanceof List) for (Object item : (List<?>) value) result.add(((Number) item).intValue());
         return result;
     }
     private int intValue(Long value) { return value == null ? 0 : value.intValue(); }

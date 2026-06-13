@@ -2,6 +2,9 @@ package com.example.mobilnekt1.match.domain;
 
 import com.google.firebase.Timestamp;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public final class Match {
     public String id;
     public String player1Id;
@@ -15,6 +18,7 @@ public final class Match {
     public String winnerId;
     public long player1Score;
     public long player2Score;
+    public List<String> completedGames = new ArrayList<>();
     public Timestamp createdAt;
     public Timestamp updatedAt;
 
@@ -27,5 +31,13 @@ public final class Match {
 
     public boolean isActive() {
         return "active".equals(status);
+    }
+
+    public boolean isFinished() {
+        return "finished".equals(status);
+    }
+
+    public boolean isGameCompleted(String gameId) {
+        return completedGames != null && completedGames.contains(gameId);
     }
 }

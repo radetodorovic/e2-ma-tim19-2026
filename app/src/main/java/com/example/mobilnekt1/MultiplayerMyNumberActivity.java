@@ -16,6 +16,8 @@ import com.example.mobilnekt1.games.mynumber.multiplayer.MyNumberGameListener;
 import com.example.mobilnekt1.games.mynumber.multiplayer.MyNumberGameRepository;
 import com.example.mobilnekt1.games.mynumber.multiplayer.MyNumberGameState;
 import com.example.mobilnekt1.games.shared.GameActionCallback;
+import com.example.mobilnekt1.profile.data.StatsRepository;
+import com.example.mobilnekt1.match.data.MatchScoreRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +30,8 @@ public final class MultiplayerMyNumberActivity extends BaseKt1Activity
     private final Random random = new Random();
     private final List<String> expressionTokens = new ArrayList<>();
     private MyNumberGameRepository repository;
+    private StatsRepository statsRepository;
+    private MatchScoreRepository matchScoreRepository;
     private MyNumberGameState state;
     private String matchId;
     private TextView headerView;
@@ -47,6 +51,7 @@ public final class MultiplayerMyNumberActivity extends BaseKt1Activity
     private long lastShake;
     private boolean advancing;
     private boolean resultShown;
+    private boolean statsCommitted;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +66,8 @@ public final class MultiplayerMyNumberActivity extends BaseKt1Activity
         configureButtons();
         configureSensor();
         repository = new MyNumberGameRepository(this);
+        statsRepository = new StatsRepository(this);
+        matchScoreRepository = new MatchScoreRepository(this);
         repository.listen(matchId, new MyNumberGameListener() {
             @Override
             public void onChanged(MyNumberGameState newState) {
@@ -69,6 +76,12 @@ public final class MultiplayerMyNumberActivity extends BaseKt1Activity
                 advancing = false;
                 if (changedRound) clearExpression();
                 render();
+                if (newState.isFinished() && !statsCommitted) {
+                    statsCommitted = true;
+                    statsRepository.commitMyNumber(matchId, silentCallback());
+                    matchScoreRepository.commitGameResult(
+                            matchId, "myNumber", "phase", silentCallback());
+                }
             }
 
             @Override

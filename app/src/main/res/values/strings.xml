@@ -53,7 +53,8 @@
     <string name="change_avatar">Promeni avatar</string>
     <string name="avatar_changed_mock">Avatar je promenjen u mock rezimu.</string>
     <string name="friend_qr">QR kod za poziv prijatelja</string>
-    <string name="qr_placeholder">QR MOCK</string>
+    <string name="profile_avatar">Avatar korisnika</string>
+    <string name="qr_generation_error">QR kod nije moguce generisati.</string>
     <string name="quiz_title">Ko zna zna</string>
     <string name="next_question">Sledece pitanje</string>
     <string name="choose_answer">Izaberite odgovor.</string>
@@ -149,6 +150,12 @@
     <string name="waiting_for_second_player">Ceka se drugi igrac.</string>
     <string name="waiting_player">Ceka se igrac...</string>
     <string name="match_players_value">Igrac 1: %1$s\nIgrac 2: %2$s</string>
+    <string name="match_score_empty">Ukupni rezultat: 0 - 0</string>
+    <string name="match_total_score">Ukupno: %1$s %2$d - %4$d %3$s\nOdigrane igre: %5$d/%6$d</string>
+    <string name="final_match_result_title">Konacan rezultat partije</string>
+    <string name="final_match_score">%1$s: %2$d\n%3$s: %4$d\n\n%5$s</string>
+    <string name="final_match_winner">Pobednik je %1$s.</string>
+    <string name="final_match_draw">Partija je zavrsena nereseno.</string>
     <string name="start_quiz_match">Pokreni Ko zna zna</string>
     <string name="start_connections_match">Pokreni Spojnice</string>
     <string name="match_error_title">Partija nije dostupna</string>
@@ -183,6 +190,9 @@
     <string name="average_scores_title">Prosecni bodovi po igri</string>
     <string name="quiz_correct_wrong_value">Ko zna zna: %1$d tacnih / %2$d netacnih odgovora</string>
     <string name="connections_percent_value">Spojnice: %1$.1f%% uspesno povezanih pojmova</string>
+    <string name="my_number_percent_value">Moj broj: %1$.1f%% tacnih brojeva (%2$d/%3$d rundi)</string>
+    <string name="step_percent_title">Korak po korak: procenat pogodaka po koraku</string>
+    <string name="step_percent_row">Korak %1$d: %2$.1f%%</string>
     <string name="total_matches_value">Ukupno odigranih partija: %1$d</string>
     <string name="win_loss_value">Pobede: %1$.1f%% | Porazi: %2$.1f%%</string>
 </resources>

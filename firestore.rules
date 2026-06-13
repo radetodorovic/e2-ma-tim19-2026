@@ -42,6 +42,24 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /quizQuestions/{questionId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update, delete: if false;
+    }
+
+    match /connectionsPuzzles/{puzzleId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update, delete: if false;
+    }
+
+    match /stepPuzzles/{puzzleId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update, delete: if false;
+    }
+
     match /matches/{matchId} {
       allow read: if signedIn();
 
@@ -49,7 +67,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly([
           'player1Id', 'player1Name', 'player2Id', 'player2Name',
           'status', 'currentGame', 'currentGameVersion', 'currentTurnPlayerId', 'winnerId',
-          'player1Score', 'player2Score', 'createdAt', 'updatedAt'
+          'player1Score', 'player2Score', 'completedGames', 'createdAt', 'updatedAt'
         ])
         && request.resource.data.player1Id == request.auth.uid
         && request.resource.data.player2Id == null
@@ -75,7 +93,7 @@ service cloud.firestore {
           && request.resource.data.player2Id == resource.data.player2Id
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'status', 'currentGame', 'currentGameVersion', 'currentTurnPlayerId', 'winnerId',
-            'player1Score', 'player2Score', 'updatedAt'
+            'player1Score', 'player2Score', 'completedGames', 'updatedAt'
           ])
         )
       );

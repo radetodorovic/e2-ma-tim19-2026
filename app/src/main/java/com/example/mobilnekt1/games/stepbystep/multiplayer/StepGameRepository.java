@@ -3,9 +3,10 @@ package com.example.mobilnekt1.games.stepbystep.multiplayer;
 import android.content.Context;
 
 import com.example.mobilnekt1.core.data.FirebaseProvider;
+import com.example.mobilnekt1.games.content.GameContentRepository;
 import com.example.mobilnekt1.games.shared.GameActionCallback;
 import com.example.mobilnekt1.games.stepbystep.StepByStepEngine;
-import com.example.mobilnekt1.games.stepbystep.StepPuzzleRepository;
+import com.example.mobilnekt1.games.stepbystep.StepPuzzle;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -14,13 +15,17 @@ import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.Arrays;
 
 public final class StepGameRepository {
     private final FirebaseProvider firebase;
+    private final GameContentRepository contentRepository;
     private ListenerRegistration registration;
 
     public StepGameRepository(Context context) {
         firebase = FirebaseProvider.getInstance(context);
+        contentRepository = new GameContentRepository(firebase.getFirestore());
     }
 
     public String currentUserId() {
@@ -29,6 +34,16 @@ public final class StepGameRepository {
     }
 
     public void initialize(String matchId, GameActionCallback callback) {
+        contentRepository.loadStepPuzzles(new GameContentRepository.Callback<List<StepPuzzle>>() {
+            @Override public void onSuccess(List<StepPuzzle> puzzles) {
+                initializeWithPuzzles(matchId, puzzles, callback);
+            }
+            @Override public void onError(String message) { callback.onError(message); }
+        });
+    }
+
+    private void initializeWithPuzzles(String matchId, List<StepPuzzle> puzzles,
+                                       GameActionCallback callback) {
         DocumentReference matchRef = matchRef(matchId);
         DocumentReference gameRef = gameRef(matchId);
         firebase.getFirestore().runTransaction(transaction -> {
@@ -38,6 +53,10 @@ public final class StepGameRepository {
                 Map<String, Object> data = new HashMap<>();
                 data.put("round", 0);
                 data.put("puzzleIndex", 0);
+                data.put("solution", puzzles.get(0).solution);
+                data.put("hints", Arrays.asList(puzzles.get(0).hints));
+                data.put("round2Solution", puzzles.get(1).solution);
+                data.put("round2Hints", Arrays.asList(puzzles.get(1).hints));
                 data.put("phase", "main");
                 data.put("player1Id", match.getString("player1Id"));
                 data.put("player2Id", match.getString("player2Id"));
@@ -46,6 +65,8 @@ public final class StepGameRepository {
                         + StepByStepEngine.ROUND_SECONDS * 1000L);
                 data.put("player1Score", 0);
                 data.put("player2Score", 0);
+                data.put("player1SolvedStep", 0);
+                data.put("player2SolvedStep", 0);
                 data.put("eventVersion", 0);
                 data.put("eventType", "none");
                 data.put("eventPlayerId", null);
@@ -80,18 +101,17 @@ public final class StepGameRepository {
             String phase = game.getString("phase");
             String activePlayerId = game.getString("activePlayerId");
             Long deadline = game.getLong("deadlineMillis");
-            Long puzzleIndexValue = game.getLong("puzzleIndex");
             if ("finished".equals(phase) || !currentUserId().equals(activePlayerId)) {
                 throw new IllegalStateException("Sacekajte svoj potez.");
             }
             if (deadline == null || deadline < System.currentTimeMillis()) {
                 throw new IllegalStateException("Vreme za odgovor je isteklo.");
             }
-            int puzzleIndex = puzzleIndexValue == null ? 0 : puzzleIndexValue.intValue();
-            if (!StepByStepEngine.matches(answer, StepPuzzleRepository.forRound(puzzleIndex).solution)) {
+            if (!StepByStepEngine.matches(answer, game.getString("solution"))) {
                 throw new IllegalArgumentException("Netacan odgovor.");
             }
             int points;
+            int solvedStep = 0;
             if ("steal".equals(phase)) {
                 points = 5;
             } else {
@@ -100,8 +120,9 @@ public final class StepGameRepository {
                         - (int) Math.ceil(remaining / 1000.0);
                 int hints = Math.min(7, 1 + Math.max(0, elapsed) / 10);
                 points = StepByStepEngine.pointsForHint(hints);
+                solvedStep = hints;
             }
-            awardAndAdvance(transaction, game, gameRef, points);
+            awardAndAdvance(transaction, game, gameRef, points, solvedStep);
             return null;
         }).addOnSuccessListener(unused -> callback.onSuccess())
                 .addOnFailureListener(error -> callback.onError(message(error)));
@@ -136,7 +157,8 @@ public final class StepGameRepository {
     }
 
     private void awardAndAdvance(com.google.firebase.firestore.Transaction transaction,
-                                 DocumentSnapshot game, DocumentReference gameRef, int points) {
+                                 DocumentSnapshot game, DocumentReference gameRef, int points,
+                                 int solvedStep) {
         String player1Id = game.getString("player1Id");
         String scoreField = currentUserId().equals(player1Id) ? "player1Score" : "player2Score";
         transaction.update(gameRef,
@@ -145,6 +167,11 @@ public final class StepGameRepository {
                 "eventType", "correctAnswer",
                 "eventPlayerId", currentUserId(),
                 "eventPoints", points);
+        if (solvedStep > 0) {
+            transaction.update(gameRef,
+                    currentUserId().equals(player1Id) ? "player1SolvedStep" : "player2SolvedStep",
+                    solvedStep);
+        }
         advanceRound(transaction, game, gameRef);
     }
 
@@ -163,6 +190,8 @@ public final class StepGameRepository {
         transaction.update(gameRef,
                 "round", 1,
                 "puzzleIndex", 1,
+                "solution", game.getString("round2Solution"),
+                "hints", game.get("round2Hints"),
                 "phase", "main",
                 "activePlayerId", game.getString("player2Id"),
                 "deadlineMillis", System.currentTimeMillis()

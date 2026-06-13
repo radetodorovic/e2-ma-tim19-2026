@@ -11,17 +11,24 @@ import com.example.mobilnekt1.games.connections.data.ConnectionsGameRepository;
 import com.example.mobilnekt1.games.connections.domain.ConnectionsGameState;
 import com.example.mobilnekt1.games.shared.GameActionCallback;
 import com.example.mobilnekt1.profile.data.StatsRepository;
+import com.example.mobilnekt1.match.data.MatchScoreRepository;
 
 public final class ConnectionsGameViewModel extends AndroidViewModel {
     private final ConnectionsGameRepository repository;
     private final StatsRepository statsRepository;
+    private final MatchScoreRepository matchScoreRepository;
     private final MutableLiveData<ConnectionsGameState> state = new MutableLiveData<>();
     private final MutableLiveData<Event<String>> error = new MutableLiveData<>();
     private String matchId;
     private boolean advancing;
     private boolean statsCommitted;
 
-    public ConnectionsGameViewModel(@NonNull Application app) { super(app); repository = new ConnectionsGameRepository(app); statsRepository = new StatsRepository(app); }
+    public ConnectionsGameViewModel(@NonNull Application app) {
+        super(app);
+        repository = new ConnectionsGameRepository(app);
+        statsRepository = new StatsRepository(app);
+        matchScoreRepository = new MatchScoreRepository(app);
+    }
     public LiveData<ConnectionsGameState> getState() { return state; }
     public LiveData<Event<String>> getError() { return error; }
     public String currentUserId() { return repository.currentUserId(); }
@@ -34,6 +41,7 @@ public final class ConnectionsGameViewModel extends AndroidViewModel {
                 if (value.isFinished() && !statsCommitted) {
                     statsCommitted = true;
                     statsRepository.commitConnections(matchId, callback());
+                    matchScoreRepository.commitGameResult(matchId, "spojnice", "phase", callback());
                 }
             }
             @Override public void onError(String message) { showError(message); }

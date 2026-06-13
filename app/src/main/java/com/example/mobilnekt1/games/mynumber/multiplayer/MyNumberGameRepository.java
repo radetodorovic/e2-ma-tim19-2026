@@ -163,6 +163,8 @@ public final class MyNumberGameRepository {
         boolean p2Exact = p2 != null && p2 == target;
         if (p1Exact) p1Points = 10;
         if (p2Exact) p2Points = 10;
+        if (p1Exact) transaction.update(gameRef, "player1ExactRounds", FieldValue.increment(1));
+        if (p2Exact) transaction.update(gameRef, "player2ExactRounds", FieldValue.increment(1));
         if (!p1Exact && !p2Exact) {
             int d1 = p1 == null ? Integer.MAX_VALUE : Math.abs(target - p1);
             int d2 = p2 == null ? Integer.MAX_VALUE : Math.abs(target - p2);
@@ -190,6 +192,8 @@ public final class MyNumberGameRepository {
             reset.remove("player2Id");
             reset.remove("player1Score");
             reset.remove("player2Score");
+            reset.remove("player1ExactRounds");
+            reset.remove("player2ExactRounds");
             transaction.update(gameRef, reset);
         }
     }
@@ -213,6 +217,8 @@ public final class MyNumberGameRepository {
         data.put("player2Submitted", false);
         data.put("player1Score", 0);
         data.put("player2Score", 0);
+        data.put("player1ExactRounds", 0);
+        data.put("player2ExactRounds", 0);
         data.put("updatedAt", FieldValue.serverTimestamp());
         return data;
     }

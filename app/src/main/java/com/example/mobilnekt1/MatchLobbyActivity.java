@@ -26,6 +26,7 @@ public final class MatchLobbyActivity extends BaseKt1Activity {
     private TextView codeView;
     private TextView statusView;
     private TextView playersView;
+    private TextView scoreView;
     private ProgressBar progressBar;
     private Button createButton;
     private Button joinButton;
@@ -34,6 +35,7 @@ public final class MatchLobbyActivity extends BaseKt1Activity {
     private Button stepByStepButton;
     private Button myNumberButton;
     private String currentMatchId;
+    private boolean finalResultShown;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +66,7 @@ public final class MatchLobbyActivity extends BaseKt1Activity {
         codeView = findViewById(R.id.text_match_code);
         statusView = findViewById(R.id.text_match_status);
         playersView = findViewById(R.id.text_match_players);
+        scoreView = findViewById(R.id.text_match_score);
         progressBar = findViewById(R.id.progress_match);
         createButton = findViewById(R.id.button_create_match);
         joinButton = findViewById(R.id.button_join_match);
@@ -85,6 +88,7 @@ public final class MatchLobbyActivity extends BaseKt1Activity {
             codeView.setText(R.string.no_active_match);
             statusView.setText(R.string.create_or_join_match);
             playersView.setText(R.string.waiting_for_match);
+            scoreView.setText(R.string.match_score_empty);
             quizButton.setEnabled(false);
             connectionsButton.setEnabled(false);
             stepByStepButton.setEnabled(false);
@@ -98,16 +102,42 @@ public final class MatchLobbyActivity extends BaseKt1Activity {
                     ? getString(R.string.waiting_player) : match.player2Name;
             playersView.setText(getString(R.string.match_players_value,
                     match.player1Name, secondPlayer));
-            quizButton.setEnabled(match.isActive() && !state.loading);
-            connectionsButton.setEnabled(match.isActive() && !state.loading);
-            stepByStepButton.setEnabled(match.isActive() && !state.loading);
-            myNumberButton.setEnabled(match.isActive() && !state.loading);
+            int completed = match.completedGames == null ? 0 : match.completedGames.size();
+            scoreView.setText(getString(R.string.match_total_score,
+                    match.player1Name, (int) match.player1Score,
+                    secondPlayer, (int) match.player2Score, completed, 4));
+            quizButton.setEnabled(canStart(match, GAME_QUIZ, state.loading));
+            connectionsButton.setEnabled(canStart(match, GAME_CONNECTIONS, state.loading));
+            stepByStepButton.setEnabled(canStart(match, GAME_STEP_BY_STEP, state.loading));
+            myNumberButton.setEnabled(canStart(match, GAME_MY_NUMBER, state.loading));
+            if (match.isFinished() && !finalResultShown) {
+                finalResultShown = true;
+                showInfoDialog(getString(R.string.final_match_result_title), finalResult(match));
+            }
         }
 
         if (state.error != null) {
             showInfoDialog(getString(R.string.match_error_title), state.error);
             viewModel.clearError();
         }
+    }
+
+    private boolean canStart(Match match, String game, boolean loading) {
+        return match.isActive() && !loading && !match.isGameCompleted(game);
+    }
+
+    private String finalResult(Match match) {
+        String outcome;
+        if (match.winnerId == null) {
+            outcome = getString(R.string.final_match_draw);
+        } else if (match.winnerId.equals(match.player1Id)) {
+            outcome = getString(R.string.final_match_winner, match.player1Name);
+        } else {
+            outcome = getString(R.string.final_match_winner, match.player2Name);
+        }
+        return getString(R.string.final_match_score,
+                match.player1Name, (int) match.player1Score,
+                match.player2Name, (int) match.player2Score, outcome);
     }
 
     private void openGame(String game) {

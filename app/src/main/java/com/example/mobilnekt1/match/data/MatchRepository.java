@@ -13,6 +13,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Map;
 
 public final class MatchRepository {
@@ -55,6 +56,7 @@ public final class MatchRepository {
             data.put("winnerId", null);
             data.put("player1Score", 0);
             data.put("player2Score", 0);
+            data.put("completedGames", new ArrayList<>());
             data.put("createdAt", FieldValue.serverTimestamp());
             data.put("updatedAt", FieldValue.serverTimestamp());
             transaction.set(reference, data);
@@ -138,6 +140,11 @@ public final class MatchRepository {
             DocumentSnapshot snapshot = transaction.get(reference);
             if (!snapshot.exists() || !"active".equals(snapshot.getString("status"))) {
                 throw new IllegalStateException("Sacekajte da se drugi igrac pridruzi.");
+            }
+            Object completedValue = snapshot.get("completedGames");
+            if (completedValue instanceof java.util.List
+                    && ((java.util.List<?>) completedValue).contains(game)) {
+                throw new IllegalStateException("Ova igra je vec odigrana u trenutnoj partiji.");
             }
             String player1Id = snapshot.getString("player1Id");
             String player2Id = snapshot.getString("player2Id");

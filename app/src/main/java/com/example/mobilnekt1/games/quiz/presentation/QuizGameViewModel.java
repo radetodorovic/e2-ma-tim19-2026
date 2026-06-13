@@ -13,10 +13,12 @@ import com.example.mobilnekt1.games.quiz.data.QuizGameRepository;
 import com.example.mobilnekt1.games.quiz.domain.QuizGameState;
 import com.example.mobilnekt1.games.shared.GameActionCallback;
 import com.example.mobilnekt1.profile.data.StatsRepository;
+import com.example.mobilnekt1.match.data.MatchScoreRepository;
 
 public final class QuizGameViewModel extends AndroidViewModel {
     private final QuizGameRepository repository;
     private final StatsRepository statsRepository;
+    private final MatchScoreRepository matchScoreRepository;
     private final MutableLiveData<QuizGameState> state = new MutableLiveData<>();
     private final MutableLiveData<Event<String>> error = new MutableLiveData<>();
     private String matchId;
@@ -27,6 +29,7 @@ public final class QuizGameViewModel extends AndroidViewModel {
         super(application);
         repository = new QuizGameRepository(application);
         statsRepository = new StatsRepository(application);
+        matchScoreRepository = new MatchScoreRepository(application);
     }
 
     public LiveData<QuizGameState> getState() { return state; }
@@ -44,6 +47,7 @@ public final class QuizGameViewModel extends AndroidViewModel {
                 if (value.isFinished() && !statsCommitted) {
                     statsCommitted = true;
                     statsRepository.commitQuiz(matchId, callback());
+                    matchScoreRepository.commitGameResult(matchId, "koZnaZna", "status", callback());
                 }
             }
             @Override public void onError(String message) { showError(message); }

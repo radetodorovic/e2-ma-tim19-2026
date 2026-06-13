@@ -36,11 +36,19 @@ public class StatisticsActivity extends BaseKt1Activity {
         double connectionPercent = stats.spojniceTotalPairs == 0 ? 0
                 : stats.spojniceCorrectPairs * 100.0 / stats.spojniceTotalPairs;
         addCard(getString(R.string.connections_percent_value, connectionPercent));
-        addCard(getString(R.string.total_matches_value, stats.totalMatches));
-        double total = stats.wins + stats.losses;
-        double wins = total == 0 ? 0 : stats.wins * 100.0 / total;
-        double losses = total == 0 ? 0 : stats.losses * 100.0 / total;
-        addCard(getString(R.string.win_loss_value, wins, losses));
+        double myNumberPercent = stats.myNumberTotalRounds == 0 ? 0
+                : stats.myNumberExactRounds * 100.0 / stats.myNumberTotalRounds;
+        addCard(getString(R.string.my_number_percent_value, myNumberPercent,
+                stats.myNumberExactRounds, stats.myNumberTotalRounds));
+        StringBuilder stepStats = new StringBuilder(getString(R.string.step_percent_title));
+        for (int step = 1; step <= 7; step++) {
+            long solved = stats.stepSolvedByHint == null ? 0
+                    : stats.stepSolvedByHint.getOrDefault(String.valueOf(step), 0L);
+            double percent = stats.stepRoundsPlayed == 0 ? 0
+                    : solved * 100.0 / stats.stepRoundsPlayed;
+            stepStats.append('\n').append(getString(R.string.step_percent_row, step, percent));
+        }
+        addCard(stepStats.toString());
         Button back = new Button(this);
         back.setText(R.string.back); back.setAllCaps(false); back.setOnClickListener(v -> finish());
         container.addView(back);

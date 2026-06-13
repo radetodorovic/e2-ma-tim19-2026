@@ -11,16 +11,19 @@ import android.widget.TextView;
 import com.example.mobilnekt1.games.shared.GameActionCallback;
 import com.example.mobilnekt1.games.stepbystep.StepByStepEngine;
 import com.example.mobilnekt1.games.stepbystep.StepPuzzle;
-import com.example.mobilnekt1.games.stepbystep.StepPuzzleRepository;
 import com.example.mobilnekt1.games.stepbystep.multiplayer.StepGameListener;
 import com.example.mobilnekt1.games.stepbystep.multiplayer.StepGameRepository;
 import com.example.mobilnekt1.games.stepbystep.multiplayer.StepGameState;
+import com.example.mobilnekt1.profile.data.StatsRepository;
+import com.example.mobilnekt1.match.data.MatchScoreRepository;
 
 import java.util.Locale;
 
 public final class MultiplayerStepByStepActivity extends BaseKt1Activity {
     private final Handler ticker = new Handler(Looper.getMainLooper());
     private StepGameRepository repository;
+    private StatsRepository statsRepository;
+    private MatchScoreRepository matchScoreRepository;
     private String matchId;
     private StepGameState state;
     private LinearLayout hintsContainer;
@@ -35,6 +38,7 @@ public final class MultiplayerStepByStepActivity extends BaseKt1Activity {
     private boolean advancing;
     private boolean submitting;
     private long handledEventVersion;
+    private boolean statsCommitted;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +51,8 @@ public final class MultiplayerStepByStepActivity extends BaseKt1Activity {
         }
         bindViews();
         repository = new StepGameRepository(this);
+        statsRepository = new StatsRepository(this);
+        matchScoreRepository = new MatchScoreRepository(this);
         confirmButton.setOnClickListener(v -> submitAnswer());
         repository.listen(matchId, new StepGameListener() {
             @Override
@@ -56,6 +62,12 @@ public final class MultiplayerStepByStepActivity extends BaseKt1Activity {
                 submitting = false;
                 render();
                 showRemoteEvent(newState);
+                if (newState.isFinished() && !statsCommitted) {
+                    statsCommitted = true;
+                    statsRepository.commitStepByStep(matchId, silentCallback());
+                    matchScoreRepository.commitGameResult(
+                            matchId, "stepByStep", "phase", silentCallback());
+                }
             }
 
             @Override
@@ -135,7 +147,7 @@ public final class MultiplayerStepByStepActivity extends BaseKt1Activity {
             return;
         }
         int openedHints = openedHints();
-        StepPuzzle puzzle = StepPuzzleRepository.forRound(state.puzzleIndex);
+        StepPuzzle puzzle = puzzleFromState();
         roundView.setText(getString(R.string.round_value, state.round + 1, 2));
         boolean myTurn = repository.currentUserId() != null
                 && repository.currentUserId().equals(state.activePlayerId);
@@ -197,7 +209,7 @@ public final class MultiplayerStepByStepActivity extends BaseKt1Activity {
                 long seconds = (long) Math.ceil(remaining / 1000.0);
                 timerView.setText(String.format(Locale.getDefault(), "%02d:%02d",
                         seconds / 60, seconds % 60));
-                renderHints(StepPuzzleRepository.forRound(state.puzzleIndex), openedHints());
+                renderHints(puzzleFromState(), openedHints());
                 if (remaining == 0 && !advancing) {
                     advancing = true;
                     repository.advanceExpired(matchId, silentCallback());
@@ -206,6 +218,12 @@ public final class MultiplayerStepByStepActivity extends BaseKt1Activity {
             ticker.postDelayed(this, 250);
         }
     };
+
+    private StepPuzzle puzzleFromState() {
+        String[] hints = state == null || state.hints == null
+                ? new String[0] : state.hints.toArray(new String[0]);
+        return new StepPuzzle(state == null ? "" : state.solution, hints);
+    }
 
     private GameActionCallback silentCallback() {
         return new GameActionCallback() {

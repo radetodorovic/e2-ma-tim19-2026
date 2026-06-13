@@ -16,14 +16,22 @@ public final class StatsRepository {
     public StatsRepository(Context context) { firebase = FirebaseProvider.getInstance(context); }
 
     public void commitQuiz(String matchId, GameActionCallback callback) {
-        commit(matchId, "koZnaZna", false, callback);
+        commit(matchId, "koZnaZna", "status", callback);
     }
     public void commitConnections(String matchId, GameActionCallback callback) {
-        commit(matchId, "spojnice", true, callback);
+        commit(matchId, "spojnice", "phase", callback);
+    }
+
+    public void commitMyNumber(String matchId, GameActionCallback callback) {
+        commit(matchId, "myNumber", "phase", callback);
+    }
+
+    public void commitStepByStep(String matchId, GameActionCallback callback) {
+        commit(matchId, "stepByStep", "phase", callback);
     }
 
     @SuppressWarnings("unchecked")
-    private void commit(String matchId, String gameId, boolean closesDemoMatch,
+    private void commit(String matchId, String gameId, String statusField,
                         GameActionCallback callback) {
         FirebaseUser user = firebase.getCurrentUser();
         if (user == null) { callback.onError("Sesija je istekla."); return; }
@@ -32,7 +40,7 @@ public final class StatsRepository {
         DocumentReference statsRef = firebase.getFirestore().collection("playerStats").document(user.getUid());
         firebase.getFirestore().runTransaction(transaction -> {
             DocumentSnapshot game = transaction.get(gameRef);
-            if (!game.exists() || !"finished".equals(game.getString(gameId.equals("koZnaZna") ? "status" : "phase"))) return null;
+            if (!game.exists() || !"finished".equals(game.getString(statusField))) return null;
             String player1Id = game.getString("player1Id");
             boolean player1 = user.getUid().equals(player1Id);
             if (!player1 && !user.getUid().equals(game.getString("player2Id")))
@@ -60,19 +68,28 @@ public final class StatsRepository {
                         + longValue(game.getLong(player1 ? "player1Correct" : "player2Correct")));
                 stats.put("koZnaZnaWrong", longValue(current.getLong("koZnaZnaWrong"))
                         + longValue(game.getLong(player1 ? "player1Wrong" : "player2Wrong")));
-            } else {
+            } else if (gameId.equals("spojnice")) {
                 stats.put("spojniceCorrectPairs", longValue(current.getLong("spojniceCorrectPairs"))
                         + longValue(game.getLong(player1 ? "player1CorrectPairs" : "player2CorrectPairs")));
                 stats.put("spojniceTotalPairs", longValue(current.getLong("spojniceTotalPairs"))
                         + longValue(game.getLong(player1 ? "player1AttemptedPairs" : "player2AttemptedPairs")));
-            }
-            if (closesDemoMatch) {
-                stats.put("totalMatches", longValue(current.getLong("totalMatches")) + 1);
-                long p1 = longValue(game.getLong("player1Score"));
-                long p2 = longValue(game.getLong("player2Score"));
-                if ((player1 && p1 > p2) || (!player1 && p2 > p1))
-                    stats.put("wins", longValue(current.getLong("wins")) + 1);
-                else if (p1 != p2) stats.put("losses", longValue(current.getLong("losses")) + 1);
+            } else if (gameId.equals("myNumber")) {
+                stats.put("myNumberExactRounds", longValue(current.getLong("myNumberExactRounds"))
+                        + longValue(game.getLong(player1 ? "player1ExactRounds" : "player2ExactRounds")));
+                stats.put("myNumberTotalRounds", longValue(current.getLong("myNumberTotalRounds")) + 2);
+            } else if (gameId.equals("stepByStep")) {
+                Map<String, Number> solvedByHint = stats.get("stepSolvedByHint") instanceof Map
+                        ? new HashMap<>((Map<String, Number>) stats.get("stepSolvedByHint")) : new HashMap<>();
+                int solvedStep = (int) longValue(game.getLong(player1
+                        ? "player1SolvedStep" : "player2SolvedStep"));
+                if (solvedStep > 0) {
+                    String key = String.valueOf(solvedStep);
+                    long solvedCount = solvedByHint.containsKey(key)
+                            ? solvedByHint.get(key).longValue() : 0;
+                    solvedByHint.put(key, solvedCount + 1);
+                }
+                stats.put("stepSolvedByHint", solvedByHint);
+                stats.put("stepRoundsPlayed", longValue(current.getLong("stepRoundsPlayed")) + 1);
             }
             transaction.set(statsRef, stats);
             committed.add(user.getUid());

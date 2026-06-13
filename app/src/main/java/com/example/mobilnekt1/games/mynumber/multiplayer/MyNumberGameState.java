@@ -18,6 +18,8 @@ public final class MyNumberGameState {
     public boolean player2Submitted;
     public long player1Score;
     public long player2Score;
+    public long player1ExactRounds;
+    public long player2ExactRounds;
 
     public MyNumberGameState() {
     }

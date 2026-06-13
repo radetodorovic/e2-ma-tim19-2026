@@ -25,15 +25,14 @@
             android:gravity="center_horizontal"
             android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/text_avatar"
+            <ImageView
+                android:id="@+id/image_avatar"
                 android:layout_width="112dp"
                 android:layout_height="112dp"
                 android:background="@drawable/avatar_background"
-                android:gravity="center"
-                android:textColor="@color/primary"
-                android:textSize="28sp"
-                android:textStyle="bold" />
+                android:contentDescription="@string/profile_avatar"
+                android:padding="4dp"
+                android:scaleType="centerCrop" />
 
             <TextView
                 android:id="@+id/text_profile_username"
@@ -115,7 +114,6 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/text_profile_qr"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/friend_qr"
@@ -123,16 +121,15 @@
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
-            <TextView
+            <ImageView
+                android:id="@+id/image_profile_qr"
                 android:layout_width="match_parent"
-                android:layout_height="120dp"
+                android:layout_height="220dp"
                 android:layout_marginTop="10dp"
-                android:background="@drawable/qr_placeholder"
-                android:gravity="center"
-                android:text="@string/qr_placeholder"
-                android:textColor="@color/primary"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                android:background="@android:color/white"
+                android:contentDescription="@string/friend_qr"
+                android:padding="12dp"
+                android:scaleType="fitCenter" />
         </LinearLayout>
 
         <Button

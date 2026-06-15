@@ -1,13 +1,23 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="true"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <service
+            android:name=".notifications.data.SlagalicaMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
         <activity android:name=".MatchLobbyActivity" />
+        <activity android:name=".MultiplayerAssociationsActivity" android:screenOrientation="portrait" />
+        <activity android:name=".MultiplayerSkockoActivity" android:screenOrientation="portrait" />
         <activity android:name=".MultiplayerStepByStepActivity" android:screenOrientation="portrait" />
         <activity android:name=".MultiplayerMyNumberActivity" android:screenOrientation="portrait" />
         <activity android:name=".MultiplayerQuizActivity" android:screenOrientation="portrait" />

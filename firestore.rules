@@ -35,6 +35,13 @@ service cloud.firestore {
           'avatarId', 'avatarFrame', 'qrCodeValue'
         ]);
       allow delete: if false;
+
+      match /notifications/{notificationId} {
+        allow read, create: if ownsDocument(userId);
+        allow update: if ownsDocument(userId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+        allow delete: if false;
+      }
     }
 
     match /playerStats/{userId} {

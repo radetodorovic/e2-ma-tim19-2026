@@ -5,8 +5,26 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="2530bdc2-0a91-4a7e-b73c-d2cecf7bfbf5" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../.idea/deploymentTargetSelector.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/deploymentTargetSelector.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../AGENTS.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/AndroidManifest.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/mobilnekt1/HomeActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/mobilnekt1/HomeActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/mobilnekt1/MatchLobbyActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/mobilnekt1/MatchLobbyActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/mobilnekt1/MultiplayerStepByStepActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/mobilnekt1/MultiplayerStepByStepActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/mobilnekt1/NotificationsActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/mobilnekt1/NotificationsActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/mobilnekt1/StatisticsActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/mobilnekt1/StatisticsActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/mobilnekt1/match/data/MatchScoreRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/mobilnekt1/match/data/MatchScoreRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/mobilnekt1/profile/data/StatsRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/mobilnekt1/profile/data/StatsRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/mobilnekt1/profile/domain/PlayerStats.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/mobilnekt1/profile/domain/PlayerStats.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/activity_associations.xml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/res/layout/activity_associations.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/activity_match_lobby.xml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/res/layout/activity_match_lobby.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/layout/activity_notifications.xml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/res/layout/activity_notifications.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/res/values/strings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/res/values/strings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../firestore.rules" beforeDir="false" afterPath="$PROJECT_DIR$/../firestore.rules" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -16,13 +34,25 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <projects_view>
+          <tree_state>
+            <expand />
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 1,
-  "fromUser": false
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 1,
+  &quot;fromUser&quot;: false
+}</component>
   <component name="ProjectId" id="3F3FeQnWGPp04EDtCwsQG8IGIte" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -38,9 +68,9 @@
     "android.gradle.sync.needed": "true",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
-    "git-widget-placeholder": "feat/Student2KT2",
+    "git-widget-placeholder": "main",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/Korisnik/Desktop/MOBILNE_PROJEKAT/e2-ma-tim19-2026/app"
+    "last_opened_file_path": "C:/Users/Korisnik/Desktop/e2-ma-tim19-2026/app"
   }
 }]]></component>
   <component name="TaskManager">

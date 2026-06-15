@@ -156,6 +156,28 @@
             android:textColor="@android:color/white" />
 
         <Button
+            android:id="@+id/button_lobby_associations"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/button_primary"
+            android:enabled="false"
+            android:text="@string/start_associations_match"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white" />
+
+        <Button
+            android:id="@+id/button_lobby_skocko"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/button_secondary"
+            android:enabled="false"
+            android:text="@string/start_skocko_match"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white" />
+
+        <Button
             android:id="@+id/button_lobby_back"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

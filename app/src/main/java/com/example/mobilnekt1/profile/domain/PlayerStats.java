@@ -14,6 +14,10 @@ public final class PlayerStats {
     public long myNumberExactRounds;
     public long myNumberTotalRounds;
     public long stepRoundsPlayed;
+    public long associationsSolved;
+    public long associationsTotal;
+    public long skockoRoundsPlayed;
+    public Map<String, Long> skockoSolvedByAttempt = new HashMap<>();
     public Map<String, Long> stepSolvedByHint = new HashMap<>();
     public Map<String, Double> averageScoreByGame = new HashMap<>();
     public Map<String, Long> gamesPlayedByGame = new HashMap<>();

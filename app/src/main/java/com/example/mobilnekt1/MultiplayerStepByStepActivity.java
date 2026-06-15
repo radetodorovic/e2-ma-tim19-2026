@@ -209,7 +209,11 @@ public final class MultiplayerStepByStepActivity extends BaseKt1Activity {
                 long seconds = (long) Math.ceil(remaining / 1000.0);
                 timerView.setText(String.format(Locale.getDefault(), "%02d:%02d",
                         seconds / 60, seconds % 60));
-                renderHints(puzzleFromState(), openedHints());
+                int openedHints = openedHints();
+                renderHints(puzzleFromState(), openedHints);
+                pointsView.setText(getString(R.string.possible_points,
+                        "steal".equals(state.phase)
+                                ? 5 : StepByStepEngine.pointsForHint(openedHints)));
                 if (remaining == 0 && !advancing) {
                     advancing = true;
                     repository.advanceExpired(matchId, silentCallback());

@@ -30,6 +30,14 @@ public final class StatsRepository {
         commit(matchId, "stepByStep", "phase", callback);
     }
 
+    public void commitAssociations(String matchId, GameActionCallback callback) {
+        commit(matchId, "associations", "phase", callback);
+    }
+
+    public void commitSkocko(String matchId, GameActionCallback callback) {
+        commit(matchId, "skocko", "phase", callback);
+    }
+
     @SuppressWarnings("unchecked")
     private void commit(String matchId, String gameId, String statusField,
                         GameActionCallback callback) {
@@ -90,6 +98,23 @@ public final class StatsRepository {
                 }
                 stats.put("stepSolvedByHint", solvedByHint);
                 stats.put("stepRoundsPlayed", longValue(current.getLong("stepRoundsPlayed")) + 1);
+            } else if (gameId.equals("associations")) {
+                stats.put("associationsSolved", longValue(current.getLong("associationsSolved"))
+                        + longValue(game.getLong(player1 ? "player1SolvedRounds" : "player2SolvedRounds")));
+                stats.put("associationsTotal", longValue(current.getLong("associationsTotal")) + 2);
+            } else if (gameId.equals("skocko")) {
+                Map<String, Number> solvedAttempts = stats.get("skockoSolvedByAttempt") instanceof Map
+                        ? new HashMap<>((Map<String, Number>) stats.get("skockoSolvedByAttempt")) : new HashMap<>();
+                Object gameAttemptsValue = game.get(player1 ? "player1SolvedAttempts" : "player2SolvedAttempts");
+                if (gameAttemptsValue instanceof Map) {
+                    for (Map.Entry<String, Object> entry : ((Map<String, Object>) gameAttemptsValue).entrySet()) {
+                        long previous = solvedAttempts.containsKey(entry.getKey())
+                                ? solvedAttempts.get(entry.getKey()).longValue() : 0;
+                        solvedAttempts.put(entry.getKey(), previous + ((Number) entry.getValue()).longValue());
+                    }
+                }
+                stats.put("skockoSolvedByAttempt", solvedAttempts);
+                stats.put("skockoRoundsPlayed", longValue(current.getLong("skockoRoundsPlayed")) + 1);
             }
             transaction.set(statsRef, stats);
             committed.add(user.getUid());

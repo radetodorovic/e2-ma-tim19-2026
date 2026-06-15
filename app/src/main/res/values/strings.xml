@@ -34,6 +34,7 @@
     <string name="confirm_answer">Potvrdi odgovor</string>
     <string name="next_step">Sledeci korak</string>
     <string name="round_result">Rezultat runde</string>
+    <string name="association_round_score">Prva asocijacija je zavrsena.\nIgrac 1: %1$d bodova\nIgrac 2: %2$d bodova\n\nDruga asocijacija uskoro pocinje.</string>
     <string name="target_number">Trazeni broj</string>
     <string name="offered_numbers">Ponudjeni brojevi</string>
     <string name="stop_target">STOP trazeni broj</string>
@@ -93,6 +94,7 @@
     <string name="attempt_history">Istorija pokusaja</string>
     <string name="all_notifications">Sve</string>
     <string name="unread_notifications">Neprocitane</string>
+    <string name="read_notifications">Procitane</string>
     <string name="notification_channels_title">Kanali notifikacija</string>
     <string name="notification_marked_read">Notifikacija je oznacena kao procitana.</string>
     <string name="no_notifications">Nema notifikacija za izabrani filter.</string>
@@ -161,6 +163,9 @@
     <string name="match_error_title">Partija nije dostupna</string>
     <string name="start_step_by_step_match">Pokreni Korak po korak</string>
     <string name="start_my_number_match">Pokreni Moj broj</string>
+    <string name="start_associations_match">Pokreni Asocijacije</string>
+    <string name="start_skocko_match">Pokreni Skocka</string>
+    <string name="end_turn">Zavrsi potez</string>
     <string name="your_turn">Vi ste na potezu.</string>
     <string name="opponent_turn">Protivnik je na potezu.</string>
     <string name="your_steal_turn">Vasa protivnicka sansa.</string>

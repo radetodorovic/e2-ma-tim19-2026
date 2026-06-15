@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class MatchScoreRepository {
-    public static final int REQUIRED_GAMES = 4;
+    public static final int REQUIRED_GAMES = 6;
 
     private final FirebaseProvider firebase;
 

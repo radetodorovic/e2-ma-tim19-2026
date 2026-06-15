@@ -30,7 +30,7 @@ public class StatisticsActivity extends BaseKt1Activity {
                 "Spojnice: " + average(stats, "spojnice") + "\n" +
                 "Moj broj: " + average(stats, "myNumber") + "\n" +
                 "Korak po korak: " + average(stats, "stepByStep") + "\n" +
-                "Asocijacije: " + average(stats, "asocijacije") + "\n" +
+                "Asocijacije: " + average(stats, "associations") + "\n" +
                 "Skocko: " + average(stats, "skocko"));
         addCard(getString(R.string.quiz_correct_wrong_value, stats.koZnaZnaCorrect, stats.koZnaZnaWrong));
         double connectionPercent = stats.spojniceTotalPairs == 0 ? 0
@@ -43,12 +43,27 @@ public class StatisticsActivity extends BaseKt1Activity {
         StringBuilder stepStats = new StringBuilder(getString(R.string.step_percent_title));
         for (int step = 1; step <= 7; step++) {
             long solved = stats.stepSolvedByHint == null ? 0
-                    : stats.stepSolvedByHint.getOrDefault(String.valueOf(step), 0L);
+                    : stats.stepSolvedByHint.containsKey(String.valueOf(step))
+                    ? stats.stepSolvedByHint.get(String.valueOf(step)) : 0L;
             double percent = stats.stepRoundsPlayed == 0 ? 0
                     : solved * 100.0 / stats.stepRoundsPlayed;
             stepStats.append('\n').append(getString(R.string.step_percent_row, step, percent));
         }
         addCard(stepStats.toString());
+        double associationPercent = stats.associationsTotal == 0 ? 0
+                : stats.associationsSolved * 100.0 / stats.associationsTotal;
+        addCard(String.format(Locale.getDefault(), "Asocijacije: %.1f%% resenih (%d/%d)",
+                associationPercent, stats.associationsSolved, stats.associationsTotal));
+        StringBuilder skockoStats = new StringBuilder("Skocko: procenat pogodaka po pokusaju");
+        for (int attempt = 1; attempt <= 6; attempt++) {
+            long solved = stats.skockoSolvedByAttempt == null ? 0
+                    : stats.skockoSolvedByAttempt.containsKey(String.valueOf(attempt))
+                    ? stats.skockoSolvedByAttempt.get(String.valueOf(attempt)) : 0L;
+            double percent = stats.skockoRoundsPlayed == 0 ? 0 : solved * 100.0 / stats.skockoRoundsPlayed;
+            skockoStats.append('\n').append(String.format(Locale.getDefault(),
+                    "Pokusaj %d: %.1f%%", attempt, percent));
+        }
+        addCard(skockoStats.toString());
         Button back = new Button(this);
         back.setText(R.string.back); back.setAllCaps(false); back.setOnClickListener(v -> finish());
         container.addView(back);

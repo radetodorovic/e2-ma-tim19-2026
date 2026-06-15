@@ -20,6 +20,8 @@ public final class MatchLobbyActivity extends BaseKt1Activity {
     public static final String GAME_CONNECTIONS = "spojnice";
     public static final String GAME_STEP_BY_STEP = "stepByStep";
     public static final String GAME_MY_NUMBER = "myNumber";
+    public static final String GAME_ASSOCIATIONS = "associations";
+    public static final String GAME_SKOCKO = "skocko";
 
     private MatchLobbyViewModel viewModel;
     private EditText codeInput;
@@ -34,6 +36,8 @@ public final class MatchLobbyActivity extends BaseKt1Activity {
     private Button connectionsButton;
     private Button stepByStepButton;
     private Button myNumberButton;
+    private Button associationsButton;
+    private Button skockoButton;
     private String currentMatchId;
     private boolean finalResultShown;
 
@@ -58,6 +62,8 @@ public final class MatchLobbyActivity extends BaseKt1Activity {
         connectionsButton.setOnClickListener(v -> viewModel.selectGame(GAME_CONNECTIONS));
         stepByStepButton.setOnClickListener(v -> viewModel.selectGame(GAME_STEP_BY_STEP));
         myNumberButton.setOnClickListener(v -> viewModel.selectGame(GAME_MY_NUMBER));
+        associationsButton.setOnClickListener(v -> viewModel.selectGame(GAME_ASSOCIATIONS));
+        skockoButton.setOnClickListener(v -> viewModel.selectGame(GAME_SKOCKO));
         findViewById(R.id.button_lobby_back).setOnClickListener(v -> finish());
     }
 
@@ -74,6 +80,8 @@ public final class MatchLobbyActivity extends BaseKt1Activity {
         connectionsButton = findViewById(R.id.button_lobby_connections);
         stepByStepButton = findViewById(R.id.button_lobby_step_by_step);
         myNumberButton = findViewById(R.id.button_lobby_my_number);
+        associationsButton = findViewById(R.id.button_lobby_associations);
+        skockoButton = findViewById(R.id.button_lobby_skocko);
     }
 
     private void render(MatchLobbyState state) {
@@ -93,6 +101,8 @@ public final class MatchLobbyActivity extends BaseKt1Activity {
             connectionsButton.setEnabled(false);
             stepByStepButton.setEnabled(false);
             myNumberButton.setEnabled(false);
+            associationsButton.setEnabled(false);
+            skockoButton.setEnabled(false);
         } else {
             currentMatchId = match.id;
             codeView.setText(getString(R.string.match_code_value, match.id));
@@ -105,11 +115,13 @@ public final class MatchLobbyActivity extends BaseKt1Activity {
             int completed = match.completedGames == null ? 0 : match.completedGames.size();
             scoreView.setText(getString(R.string.match_total_score,
                     match.player1Name, (int) match.player1Score,
-                    secondPlayer, (int) match.player2Score, completed, 4));
+                    secondPlayer, (int) match.player2Score, completed, 6));
             quizButton.setEnabled(canStart(match, GAME_QUIZ, state.loading));
             connectionsButton.setEnabled(canStart(match, GAME_CONNECTIONS, state.loading));
             stepByStepButton.setEnabled(canStart(match, GAME_STEP_BY_STEP, state.loading));
             myNumberButton.setEnabled(canStart(match, GAME_MY_NUMBER, state.loading));
+            associationsButton.setEnabled(canStart(match, GAME_ASSOCIATIONS, state.loading));
+            skockoButton.setEnabled(canStart(match, GAME_SKOCKO, state.loading));
             if (match.isFinished() && !finalResultShown) {
                 finalResultShown = true;
                 showInfoDialog(getString(R.string.final_match_result_title), finalResult(match));
@@ -150,6 +162,10 @@ public final class MatchLobbyActivity extends BaseKt1Activity {
             destination = MultiplayerStepByStepActivity.class;
         } else if (GAME_MY_NUMBER.equals(game)) {
             destination = MultiplayerMyNumberActivity.class;
+        } else if (GAME_ASSOCIATIONS.equals(game)) {
+            destination = MultiplayerAssociationsActivity.class;
+        } else if (GAME_SKOCKO.equals(game)) {
+            destination = MultiplayerSkockoActivity.class;
         } else {
             return;
         }

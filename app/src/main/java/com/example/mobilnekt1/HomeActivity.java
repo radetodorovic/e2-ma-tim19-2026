@@ -7,6 +7,7 @@ import android.widget.Button;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.mobilnekt1.auth.presentation.AuthViewModel;
+import com.example.mobilnekt1.notifications.presentation.NotificationChannels;
 
 public class HomeActivity extends BaseKt1Activity {
     private AuthViewModel authViewModel;
@@ -20,6 +21,7 @@ public class HomeActivity extends BaseKt1Activity {
             return;
         }
         setContentView(R.layout.activity_home);
+        NotificationChannels.create(this);
 
         Button stepByStepButton = findViewById(R.id.button_step_by_step);
         Button matchLobbyButton = findViewById(R.id.button_match_lobby);
@@ -42,8 +44,8 @@ public class HomeActivity extends BaseKt1Activity {
         profileButton.setOnClickListener(v -> startActivity(new Intent(this, ProfileActivity.class)));
         quizButton.setOnClickListener(v -> startActivity(new Intent(this, MatchLobbyActivity.class)));
         connectionsButton.setOnClickListener(v -> startActivity(new Intent(this, MatchLobbyActivity.class)));
-        associationsButton.setOnClickListener(v -> startActivity(new Intent(this, AssociationsActivity.class)));
-        skockoButton.setOnClickListener(v -> startActivity(new Intent(this, SkockoActivity.class)));
+        associationsButton.setOnClickListener(v -> startActivity(new Intent(this, MatchLobbyActivity.class)));
+        skockoButton.setOnClickListener(v -> startActivity(new Intent(this, MatchLobbyActivity.class)));
         notificationsButton.setOnClickListener(v -> startActivity(new Intent(this, NotificationsActivity.class)));
         changePasswordButton.setOnClickListener(v ->
                 startActivity(new Intent(this, ResetPasswordActivity.class)));

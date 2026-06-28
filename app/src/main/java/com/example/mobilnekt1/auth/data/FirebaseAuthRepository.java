@@ -20,6 +20,8 @@ import java.util.Locale;
 import java.util.Map;
 
 import com.example.mobilnekt1.auth.domain.AuthValidator;
+import com.example.mobilnekt1.games.shared.GameActionCallback;
+import com.example.mobilnekt1.profile.data.UserRepository;
 
 public final class FirebaseAuthRepository {
     private static FirebaseAuthRepository instance;
@@ -27,6 +29,7 @@ public final class FirebaseAuthRepository {
     private final FirebaseAuth auth;
     private final FirebaseFirestore firestore;
     private final SessionManager sessionManager;
+    private final UserRepository userRepository;
     private final boolean configured;
 
     private FirebaseAuthRepository(Context context) {
@@ -47,6 +50,7 @@ public final class FirebaseAuthRepository {
         firestore = firestoreInstance;
         configured = initialized;
         sessionManager = new SessionManager(context);
+        userRepository = new UserRepository(context);
     }
 
     public static synchronized FirebaseAuthRepository getInstance(Context context) {
@@ -101,13 +105,23 @@ public final class FirebaseAuthRepository {
 
             Map<String, Object> profile = new HashMap<>();
             profile.put("email", email);
+            profile.put("uid", user.getUid());
             profile.put("username", username);
             profile.put("usernameNormalized", normalizedUsername);
             profile.put("region", region);
             profile.put("tokens", 5);
             profile.put("stars", 0);
+            profile.put("weeklyStars", 0);
+            profile.put("monthlyStars", 0);
             profile.put("league", 0);
+            profile.put("avatarId", UserRepository.DEFAULT_AVATAR_ID);
+            profile.put("avatarFrame", UserRepository.DEFAULT_AVATAR_FRAME);
+            profile.put("qrCodeValue", "slagalica:user:" + user.getUid());
+            profile.put("isOnline", false);
+            profile.put("inGame", false);
+            profile.put("lastDailyTokenClaimAt", FieldValue.serverTimestamp());
             profile.put("createdAt", FieldValue.serverTimestamp());
+            profile.put("updatedAt", FieldValue.serverTimestamp());
             transaction.set(userRef, profile);
             return null;
         }).addOnSuccessListener(unused -> user.sendEmailVerification()
@@ -164,13 +178,22 @@ public final class FirebaseAuthRepository {
     }
 
     private void loadSession(FirebaseUser user, AuthCallback callback) {
-        firestore.collection("users").document(user.getUid()).get()
-                .addOnSuccessListener(snapshot -> {
-                    String username = snapshot.getString("username");
-                    sessionManager.save(user.getUid(), user.getEmail(), username == null ? "" : username);
-                    callback.onSuccess();
-                })
-                .addOnFailureListener(error -> callback.onError(messageFor(error)));
+        userRepository.ensureCurrentUserDefaults(true, new GameActionCallback() {
+            @Override public void onSuccess() {
+                firestore.collection("users").document(user.getUid()).get()
+                        .addOnSuccessListener(snapshot -> {
+                            String username = snapshot.getString("username");
+                            sessionManager.save(user.getUid(), user.getEmail(),
+                                    username == null ? "" : username);
+                            callback.onSuccess();
+                        })
+                        .addOnFailureListener(error -> callback.onError(messageFor(error)));
+            }
+
+            @Override public void onError(String message) {
+                callback.onError(message);
+            }
+        });
     }
 
     public void checkEmailVerification(AuthCallback callback) {
@@ -241,10 +264,15 @@ public final class FirebaseAuthRepository {
     }
 
     public void logout() {
-        if (configured) {
-            auth.signOut();
-        }
         sessionManager.clear();
+        if (!configured || auth.getCurrentUser() == null) {
+            if (configured) auth.signOut();
+            return;
+        }
+        userRepository.updateUserOnlineStatus(false, new GameActionCallback() {
+            @Override public void onSuccess() { auth.signOut(); }
+            @Override public void onError(String message) { auth.signOut(); }
+        });
     }
 
     private boolean ensureConfigured(AuthCallback callback) {

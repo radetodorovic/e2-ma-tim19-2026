@@ -23,17 +23,34 @@ service cloud.firestore {
       allow read: if ownsDocument(userId);
       allow create: if ownsDocument(userId)
         && request.resource.data.keys().hasOnly([
-          'email', 'username', 'usernameNormalized', 'region',
-          'tokens', 'stars', 'league', 'createdAt'
+          'uid', 'email', 'username', 'usernameNormalized', 'region',
+          'avatarId', 'avatarFrame', 'qrCodeValue',
+          'tokens', 'stars', 'weeklyStars', 'monthlyStars', 'league',
+          'isOnline', 'inGame', 'lastDailyTokenClaimAt', 'createdAt', 'updatedAt'
         ])
+        && request.resource.data.uid == userId
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.tokens == 5
         && request.resource.data.stars == 0
-        && request.resource.data.league == 0;
+        && request.resource.data.weeklyStars == 0
+        && request.resource.data.monthlyStars == 0
+        && request.resource.data.league == 0
+        && request.resource.data.isOnline == false
+        && request.resource.data.inGame == false;
       allow update: if ownsDocument(userId)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'avatarId', 'avatarFrame', 'qrCodeValue'
-        ]);
+          'uid', 'email', 'avatarId', 'avatarFrame', 'qrCodeValue',
+          'tokens', 'stars', 'weeklyStars', 'monthlyStars', 'league',
+          'isOnline', 'inGame', 'lastDailyTokenClaimAt', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.uid == userId
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.tokens >= 0
+        && request.resource.data.stars >= 0
+        && request.resource.data.weeklyStars >= 0
+        && request.resource.data.monthlyStars >= 0
+        && request.resource.data.league >= 0
+        && request.resource.data.league <= 5;
       allow delete: if false;
 
       match /notifications/{notificationId} {

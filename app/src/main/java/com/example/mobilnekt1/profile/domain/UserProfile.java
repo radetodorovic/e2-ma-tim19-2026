@@ -14,9 +14,12 @@ public final class UserProfile {
     public long stars;
     public long weeklyStars;
     public long monthlyStars;
+    public long starTokenProgress;
     public long league;
     public boolean isOnline;
     public boolean inGame;
+    public String activeMatchId;
+    public String lastSettledMatchId;
     public Timestamp lastDailyTokenClaimAt;
     public Timestamp createdAt;
     public Timestamp updatedAt;

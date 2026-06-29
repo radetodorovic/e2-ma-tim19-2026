@@ -40,7 +40,8 @@ public final class MyNumberGameRepository {
             requireParticipant(match);
             if (!transaction.get(gameRef).exists()) {
                 transaction.set(gameRef, initialRound(match.getString("player1Id"),
-                        match.getString("player2Id"), match.getString("player1Id"), 0, generated));
+                        match.getString("player2Id"), match.getString("player1Id"),
+                        match.getString("abandonedByUserId"), 0, generated));
             }
             return null;
         }).addOnSuccessListener(unused -> callback.onSuccess())
@@ -116,7 +117,9 @@ public final class MyNumberGameRepository {
                     submittedField, true,
                     "updatedAt", FieldValue.serverTimestamp());
             boolean otherSubmitted = Boolean.TRUE.equals(game.getBoolean(
-                    player1 ? "player2Submitted" : "player1Submitted"));
+                    player1 ? "player2Submitted" : "player1Submitted"))
+                    || (player1 ? game.getString("player2Id") : game.getString("player1Id"))
+                    .equals(game.getString("abandonedPlayerId"));
             if (otherSubmitted) {
                 scoreAndAdvance(transaction, match, game, gameRef,
                         player1 ? result : value(game.getLong("player1Result")),
@@ -187,7 +190,8 @@ public final class MyNumberGameRepository {
                     "updatedAt", FieldValue.serverTimestamp());
         } else {
             Map<String, Object> reset = initialRound(match.getString("player1Id"),
-                    match.getString("player2Id"), match.getString("player2Id"), 1, nextRound);
+                    match.getString("player2Id"), match.getString("player2Id"),
+                    match.getString("abandonedByUserId"), 1, nextRound);
             reset.remove("player1Id");
             reset.remove("player2Id");
             reset.remove("player1Score");
@@ -199,13 +203,15 @@ public final class MyNumberGameRepository {
     }
 
     private Map<String, Object> initialRound(String player1Id, String player2Id, String starter,
-                                             int round, MyNumberRound generated) {
+                                             String abandonedPlayerId, int round,
+                                             MyNumberRound generated) {
         Map<String, Object> data = new HashMap<>();
         data.put("round", round);
         data.put("phase", "targetRolling");
         data.put("player1Id", player1Id);
         data.put("player2Id", player2Id);
         data.put("startingPlayerId", starter);
+        data.put("abandonedPlayerId", abandonedPlayerId);
         data.put("deadlineMillis", System.currentTimeMillis() + 5_000L);
         data.put("target", generated.getTarget());
         List<Integer> numbers = new ArrayList<>();
@@ -213,8 +219,8 @@ public final class MyNumberGameRepository {
         data.put("numbers", numbers);
         data.put("player1Result", null);
         data.put("player2Result", null);
-        data.put("player1Submitted", false);
-        data.put("player2Submitted", false);
+        data.put("player1Submitted", player1Id.equals(abandonedPlayerId));
+        data.put("player2Submitted", player2Id.equals(abandonedPlayerId));
         data.put("player1Score", 0);
         data.put("player2Score", 0);
         data.put("player1ExactRounds", 0);

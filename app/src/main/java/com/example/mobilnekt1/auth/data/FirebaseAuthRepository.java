@@ -113,12 +113,15 @@ public final class FirebaseAuthRepository {
             profile.put("stars", 0);
             profile.put("weeklyStars", 0);
             profile.put("monthlyStars", 0);
+            profile.put("starTokenProgress", 0);
             profile.put("league", 0);
             profile.put("avatarId", UserRepository.DEFAULT_AVATAR_ID);
             profile.put("avatarFrame", UserRepository.DEFAULT_AVATAR_FRAME);
             profile.put("qrCodeValue", "slagalica:user:" + user.getUid());
             profile.put("isOnline", false);
             profile.put("inGame", false);
+            profile.put("activeMatchId", null);
+            profile.put("lastSettledMatchId", null);
             profile.put("lastDailyTokenClaimAt", FieldValue.serverTimestamp());
             profile.put("createdAt", FieldValue.serverTimestamp());
             profile.put("updatedAt", FieldValue.serverTimestamp());

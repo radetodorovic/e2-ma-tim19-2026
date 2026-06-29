@@ -47,7 +47,8 @@ public final class ConnectionsGameRepository {
             DocumentSnapshot match = transaction.get(matchRef);
             requireMatchParticipant(match);
             if (!transaction.get(gameRef).exists()) {
-                Map<String, Object> data = roundData(0, match.getString("player1Id"), puzzles.get(0));
+                Map<String, Object> data = roundData(0, match.getString("player1Id"),
+                        match.getString("abandonedByUserId"), puzzles.get(0));
                 data.put("round2LeftItems", puzzles.get(1).leftItems);
                 data.put("round2RightItems", puzzles.get(1).rightItems);
                 data.put("round2CorrectMatches", puzzles.get(1).correctMatches);
@@ -152,6 +153,10 @@ public final class ConnectionsGameRepository {
         String starter = game.getString("startingPlayerId");
         String opponent = starter.equals(game.getString("player1Id"))
                 ? game.getString("player2Id") : game.getString("player1Id");
+        if (opponent.equals(game.getString("abandonedPlayerId"))) {
+            startNextRoundOrFinish(game, updates);
+            return;
+        }
         updates.put("phase", "steal");
         updates.put("activePlayerId", opponent);
         updates.put("currentLeft", next);
@@ -166,19 +171,28 @@ public final class ConnectionsGameRepository {
             updates.put("deadlineMillis", 0);
             return;
         }
-        updates.putAll(roundData(1, game.getString("player2Id"), new GameContentRepository.ConnectionsPuzzle(
+        String starter = game.getString("player2Id");
+        if (starter.equals(game.getString("abandonedPlayerId"))) {
+            updates.put("phase", "finished");
+            updates.put("activePlayerId", null);
+            updates.put("deadlineMillis", 0);
+            return;
+        }
+        updates.putAll(roundData(1, starter, game.getString("abandonedPlayerId"), new GameContentRepository.ConnectionsPuzzle(
                 stringList(game.get("round2LeftItems")), stringList(game.get("round2RightItems")),
                 integerList(game.get("round2CorrectMatches")))));
     }
 
-    private Map<String, Object> roundData(int round, String starter,
+    private Map<String, Object> roundData(int round, String starter, String abandonedPlayerId,
                                           GameContentRepository.ConnectionsPuzzle puzzle) {
         Map<String, Object> data = new HashMap<>();
         data.put("round", round);
         data.put("phase", "main");
         data.put("startingPlayerId", starter);
         data.put("activePlayerId", starter);
-        data.put("deadlineMillis", System.currentTimeMillis() + PHASE_MILLIS);
+        data.put("abandonedPlayerId", abandonedPlayerId);
+        data.put("deadlineMillis", starter.equals(abandonedPlayerId)
+                ? 0 : System.currentTimeMillis() + PHASE_MILLIS);
         data.put("currentLeft", 0);
         data.put("solvedLeft", new ArrayList<>());
         data.put("leftItems", puzzle.leftItems);

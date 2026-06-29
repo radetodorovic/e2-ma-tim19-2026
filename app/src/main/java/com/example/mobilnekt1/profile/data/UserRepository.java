@@ -5,6 +5,7 @@ import android.content.Context;
 import com.example.mobilnekt1.core.data.FirebaseProvider;
 import com.example.mobilnekt1.games.shared.GameActionCallback;
 import com.example.mobilnekt1.profile.domain.UserProfile;
+import com.example.mobilnekt1.profile.domain.DailyTokenPolicy;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -12,7 +13,9 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.SetOptions;
 
 import java.util.HashMap;
+import java.util.Date;
 import java.util.Map;
+import java.util.TimeZone;
 
 public final class UserRepository {
     public static final String DEFAULT_AVATAR_ID = "M1";
@@ -37,6 +40,15 @@ public final class UserRepository {
                     callback.onSuccess(toProfile(snapshot, userId, null));
                 })
                 .addOnFailureListener(error -> callback.onError(message(error)));
+    }
+
+    public void getCurrentUser(UserProfileCallback callback) {
+        FirebaseUser user = firebase.getCurrentUser();
+        if (user == null) {
+            callback.onError("Sesija je istekla.");
+            return;
+        }
+        getUserById(user.getUid(), callback);
     }
 
     public void updateUser(Map<String, Object> values, GameActionCallback callback) {
@@ -65,6 +77,36 @@ public final class UserRepository {
 
     public void addStars(long amount, GameActionCallback callback) {
         updateCounters(0, amount, callback);
+    }
+
+    public void claimDailyTokens(DailyTokenCallback callback) {
+        FirebaseUser user = firebase.getCurrentUser();
+        if (!firebase.isConfigured() || user == null) {
+            callback.onError("Sesija je istekla.");
+            return;
+        }
+        DocumentReference reference = userReference(user.getUid());
+        Date now = new Date();
+        firebase.getFirestore().runTransaction(transaction -> {
+            DocumentSnapshot snapshot = transaction.get(reference);
+            if (!snapshot.exists()) {
+                throw new IllegalStateException("Korisnicki profil ne postoji.");
+            }
+            com.google.firebase.Timestamp lastClaim =
+                    snapshot.getTimestamp("lastDailyTokenClaimAt");
+            if (!DailyTokenPolicy.canClaim(lastClaim == null ? null : lastClaim.toDate(),
+                    now, TimeZone.getDefault())) {
+                return 0L;
+            }
+            long reward = DailyTokenPolicy.rewardForLeague(value(snapshot, "league"));
+            Map<String, Object> updates = new HashMap<>();
+            updates.put("tokens", value(snapshot, "tokens") + reward);
+            updates.put("lastDailyTokenClaimAt", FieldValue.serverTimestamp());
+            updates.put("updatedAt", FieldValue.serverTimestamp());
+            transaction.update(reference, updates);
+            return reward;
+        }).addOnSuccessListener(amount -> callback.onComplete(amount > 0, amount))
+                .addOnFailureListener(error -> callback.onError(message(error)));
     }
 
     public void updateStars(long totalStars, long weeklyStars, long monthlyStars,
@@ -142,8 +184,11 @@ public final class UserRepository {
         putIfMissing(snapshot, values, "stars", 0L);
         putIfMissing(snapshot, values, "weeklyStars", 0L);
         putIfMissing(snapshot, values, "monthlyStars", 0L);
+        putIfMissing(snapshot, values, "starTokenProgress", 0L);
         putIfMissing(snapshot, values, "league", 0L);
         putIfMissing(snapshot, values, "inGame", false);
+        putIfMissing(snapshot, values, "activeMatchId", null);
+        putIfMissing(snapshot, values, "lastSettledMatchId", null);
         putIfMissing(snapshot, values, "lastDailyTokenClaimAt", FieldValue.serverTimestamp());
         putIfMissing(snapshot, values, "createdAt", FieldValue.serverTimestamp());
         if (!Boolean.valueOf(online).equals(snapshot.getBoolean("isOnline"))) {

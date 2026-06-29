@@ -199,7 +199,10 @@ public final class AssociationGameRepository {
         data.put("round", round);
         data.put("phase", "playing");
         data.put("startingPlayerId", starter);
-        data.put("activePlayerId", starter);
+        String abandoned = match.getString("abandonedByUserId");
+        String activePlayer = starter.equals(abandoned) ? otherPlayer(match, starter) : starter;
+        data.put("abandonedPlayerId", abandoned);
+        data.put("activePlayerId", activePlayer);
         data.put("turnStage", "open");
         data.put("deadlineMillis", System.currentTimeMillis() + ROUND_MILLIS);
         List<String> fields = new ArrayList<>();
@@ -244,8 +247,12 @@ public final class AssociationGameRepository {
     }
     private void switchTurn(Transaction transaction, DocumentSnapshot match,
                             DocumentReference gameRef) {
+        String nextPlayer = otherPlayer(match, currentUserId());
+        if (nextPlayer.equals(match.getString("abandonedByUserId"))) {
+            nextPlayer = currentUserId();
+        }
         transaction.update(gameRef,
-                "activePlayerId", otherPlayer(match, currentUserId()),
+                "activePlayerId", nextPlayer,
                 "turnStage", "open",
                 "updatedAt", FieldValue.serverTimestamp());
     }

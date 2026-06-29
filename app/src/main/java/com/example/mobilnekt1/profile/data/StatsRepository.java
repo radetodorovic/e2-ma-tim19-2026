@@ -3,6 +3,7 @@ package com.example.mobilnekt1.profile.data;
 import android.content.Context;
 import com.example.mobilnekt1.core.data.FirebaseProvider;
 import com.example.mobilnekt1.games.shared.GameActionCallback;
+import com.example.mobilnekt1.match.domain.MatchType;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -43,11 +44,14 @@ public final class StatsRepository {
                         GameActionCallback callback) {
         FirebaseUser user = firebase.getCurrentUser();
         if (user == null) { callback.onError("Sesija je istekla."); return; }
-        DocumentReference gameRef = firebase.getFirestore().collection("matches").document(matchId)
-                .collection("games").document(gameId);
+        DocumentReference matchRef = firebase.getFirestore().collection("matches").document(matchId);
+        DocumentReference gameRef = matchRef.collection("games").document(gameId);
         DocumentReference statsRef = firebase.getFirestore().collection("playerStats").document(user.getUid());
         firebase.getFirestore().runTransaction(transaction -> {
+            DocumentSnapshot match = transaction.get(matchRef);
             DocumentSnapshot game = transaction.get(gameRef);
+            String matchType = match.getString("matchType");
+            if (matchType != null && !MatchType.REGULAR.equals(matchType)) return null;
             if (!game.exists() || !"finished".equals(game.getString(statusField))) return null;
             String player1Id = game.getString("player1Id");
             boolean player1 = user.getUid().equals(player1Id);

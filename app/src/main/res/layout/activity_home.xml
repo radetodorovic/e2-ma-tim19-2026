@@ -123,6 +123,16 @@
                 android:textColor="@color/accent" />
 
             <Button
+                android:id="@+id/button_friends"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/button_outline"
+                android:text="@string/friends_title"
+                android:textAllCaps="false"
+                android:textColor="@color/accent" />
+
+            <Button
                 android:id="@+id/button_change_password"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

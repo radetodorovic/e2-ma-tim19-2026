@@ -50,6 +50,8 @@ public final class StepGameRepository {
             DocumentSnapshot match = transaction.get(matchRef);
             requireParticipant(match);
             if (!transaction.get(gameRef).exists()) {
+                String abandoned = match.getString("abandonedByUserId");
+                String player1Id = match.getString("player1Id");
                 Map<String, Object> data = new HashMap<>();
                 data.put("round", 0);
                 data.put("puzzleIndex", 0);
@@ -58,11 +60,12 @@ public final class StepGameRepository {
                 data.put("round2Solution", puzzles.get(1).solution);
                 data.put("round2Hints", Arrays.asList(puzzles.get(1).hints));
                 data.put("phase", "main");
-                data.put("player1Id", match.getString("player1Id"));
+                data.put("player1Id", player1Id);
                 data.put("player2Id", match.getString("player2Id"));
-                data.put("activePlayerId", match.getString("player1Id"));
-                data.put("deadlineMillis", System.currentTimeMillis()
-                        + StepByStepEngine.ROUND_SECONDS * 1000L);
+                data.put("abandonedPlayerId", abandoned);
+                data.put("activePlayerId", player1Id);
+                data.put("deadlineMillis", player1Id.equals(abandoned) ? 0
+                        : System.currentTimeMillis() + StepByStepEngine.ROUND_SECONDS * 1000L);
                 data.put("player1Score", 0);
                 data.put("player2Score", 0);
                 data.put("player1SolvedStep", 0);
@@ -142,12 +145,16 @@ public final class StepGameRepository {
                 String starter = game.getString("activePlayerId");
                 String opponent = starter.equals(game.getString("player1Id"))
                         ? game.getString("player2Id") : game.getString("player1Id");
-                transaction.update(gameRef,
-                        "phase", "steal",
-                        "activePlayerId", opponent,
-                        "deadlineMillis", System.currentTimeMillis()
-                                + StepByStepEngine.STEAL_SECONDS * 1000L,
-                        "updatedAt", FieldValue.serverTimestamp());
+                if (opponent.equals(game.getString("abandonedPlayerId"))) {
+                    advanceRound(transaction, game, gameRef);
+                } else {
+                    transaction.update(gameRef,
+                            "phase", "steal",
+                            "activePlayerId", opponent,
+                            "deadlineMillis", System.currentTimeMillis()
+                                    + StepByStepEngine.STEAL_SECONDS * 1000L,
+                            "updatedAt", FieldValue.serverTimestamp());
+                }
             } else {
                 advanceRound(transaction, game, gameRef);
             }
@@ -194,8 +201,9 @@ public final class StepGameRepository {
                 "hints", game.get("round2Hints"),
                 "phase", "main",
                 "activePlayerId", game.getString("player2Id"),
-                "deadlineMillis", System.currentTimeMillis()
-                        + StepByStepEngine.ROUND_SECONDS * 1000L,
+                "deadlineMillis", game.getString("player2Id").equals(
+                        game.getString("abandonedPlayerId")) ? 0
+                        : System.currentTimeMillis() + StepByStepEngine.ROUND_SECONDS * 1000L,
                 "updatedAt", FieldValue.serverTimestamp());
     }
 

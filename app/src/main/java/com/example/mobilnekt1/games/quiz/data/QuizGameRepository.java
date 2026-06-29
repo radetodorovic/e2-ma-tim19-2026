@@ -51,9 +51,13 @@ public final class QuizGameRepository {
             DocumentSnapshot match = transaction.get(matchRef);
             requireParticipant(match);
             if (!transaction.get(gameRef).exists()) {
+                String abandoned = match.getString("abandonedByUserId");
+                String player1Id = match.getString("player1Id");
+                String player2Id = match.getString("player2Id");
                 Map<String, Object> data = new HashMap<>();
-                data.put("player1Id", match.getString("player1Id"));
-                data.put("player2Id", match.getString("player2Id"));
+                data.put("player1Id", player1Id);
+                data.put("player2Id", player2Id);
+                data.put("abandonedPlayerId", abandoned);
                 data.put("status", "active");
                 data.put("currentQuestionIndex", 0);
                 data.put("deadlineMillis", System.currentTimeMillis() + QUESTION_SECONDS * 1000L);
@@ -62,8 +66,8 @@ public final class QuizGameRepository {
                 data.put("player2Answer", null);
                 data.put("player1AnsweredAt", null);
                 data.put("player2AnsweredAt", null);
-                data.put("player1Submitted", false);
-                data.put("player2Submitted", false);
+                data.put("player1Submitted", player1Id.equals(abandoned));
+                data.put("player2Submitted", player2Id.equals(abandoned));
                 data.put("player1Score", 0);
                 data.put("player2Score", 0);
                 data.put("player1Correct", 0);
@@ -125,8 +129,12 @@ public final class QuizGameRepository {
             requireGameParticipant(game);
             if (!"active".equals(game.getString("status"))) return null;
             Long deadline = game.getLong("deadlineMillis");
-            boolean bothSubmitted = Boolean.TRUE.equals(game.getBoolean("player1Submitted"))
-                    && Boolean.TRUE.equals(game.getBoolean("player2Submitted"));
+            String abandoned = game.getString("abandonedPlayerId");
+            boolean player1Submitted = Boolean.TRUE.equals(game.getBoolean("player1Submitted"))
+                    || game.getString("player1Id").equals(abandoned);
+            boolean player2Submitted = Boolean.TRUE.equals(game.getBoolean("player2Submitted"))
+                    || game.getString("player2Id").equals(abandoned);
+            boolean bothSubmitted = player1Submitted && player2Submitted;
             if (!bothSubmitted && (deadline == null || deadline > System.currentTimeMillis())) return null;
 
             int questionIndex = intValue(game.getLong("currentQuestionIndex"));
@@ -158,8 +166,8 @@ public final class QuizGameRepository {
                 updates.put("player2Answer", null);
                 updates.put("player1AnsweredAt", null);
                 updates.put("player2AnsweredAt", null);
-                updates.put("player1Submitted", false);
-                updates.put("player2Submitted", false);
+                updates.put("player1Submitted", game.getString("player1Id").equals(abandoned));
+                updates.put("player2Submitted", game.getString("player2Id").equals(abandoned));
             }
             updates.put("updatedAt", FieldValue.serverTimestamp());
             transaction.update(gameRef, updates);

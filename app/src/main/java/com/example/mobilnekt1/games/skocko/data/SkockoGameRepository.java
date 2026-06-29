@@ -82,9 +82,14 @@ public final class SkockoGameRepository {
             } else if ("steal".equals(phase)) {
                 finishRound(transaction, match, game, gameRef, null, 0, history, nextSolution);
             } else if (attempt >= 5) {
-                transaction.update(gameRef, "phase", "steal", "activePlayerId", otherPlayer(match, currentUserId()),
-                        "deadlineMillis", System.currentTimeMillis() + STEAL_MILLIS, "attempt", 0,
-                        "history", history, "updatedAt", FieldValue.serverTimestamp());
+                String opponent = otherPlayer(match, currentUserId());
+                if (opponent.equals(match.getString("abandonedByUserId"))) {
+                    finishRound(transaction, match, game, gameRef, null, 0, history, nextSolution);
+                } else {
+                    transaction.update(gameRef, "phase", "steal", "activePlayerId", opponent,
+                            "deadlineMillis", System.currentTimeMillis() + STEAL_MILLIS, "attempt", 0,
+                            "history", history, "updatedAt", FieldValue.serverTimestamp());
+                }
             } else {
                 transaction.update(gameRef, "attempt", attempt + 1, "history", history,
                         "updatedAt", FieldValue.serverTimestamp());
@@ -106,10 +111,16 @@ public final class SkockoGameRepository {
             if (!game.exists() || "finished".equals(game.getString("phase")) || deadline == null
                     || deadline > System.currentTimeMillis()) return null;
             if ("playing".equals(game.getString("phase"))) {
-                transaction.update(gameRef, "phase", "steal",
-                        "activePlayerId", otherPlayer(match, game.getString("startingPlayerId")),
-                        "deadlineMillis", System.currentTimeMillis() + STEAL_MILLIS, "attempt", 0,
-                        "updatedAt", FieldValue.serverTimestamp());
+                String opponent = otherPlayer(match, game.getString("startingPlayerId"));
+                if (opponent.equals(match.getString("abandonedByUserId"))) {
+                    finishRound(transaction, match, game, gameRef, null, 0,
+                            stringList(game.get("history")), nextSolution);
+                } else {
+                    transaction.update(gameRef, "phase", "steal",
+                            "activePlayerId", opponent,
+                            "deadlineMillis", System.currentTimeMillis() + STEAL_MILLIS, "attempt", 0,
+                            "updatedAt", FieldValue.serverTimestamp());
+                }
             } else {
                 finishRound(transaction, match, game, gameRef, null, 0,
                         stringList(game.get("history")), nextSolution);
@@ -155,10 +166,14 @@ public final class SkockoGameRepository {
         data.put("player1Id", match.getString("player1Id"));
         data.put("player2Id", match.getString("player2Id"));
         data.put("round", round);
-        data.put("phase", "playing");
+        String abandoned = match.getString("abandonedByUserId");
+        boolean starterAbandoned = starter.equals(abandoned);
+        data.put("abandonedPlayerId", abandoned);
+        data.put("phase", starterAbandoned ? "steal" : "playing");
         data.put("startingPlayerId", starter);
-        data.put("activePlayerId", starter);
-        data.put("deadlineMillis", System.currentTimeMillis() + ROUND_MILLIS);
+        data.put("activePlayerId", starterAbandoned ? otherPlayer(match, starter) : starter);
+        data.put("deadlineMillis", System.currentTimeMillis()
+                + (starterAbandoned ? STEAL_MILLIS : ROUND_MILLIS));
         data.put("solution", solution);
         data.put("attempt", 0);
         data.put("history", new ArrayList<>());

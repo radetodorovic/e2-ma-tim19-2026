@@ -10,20 +10,25 @@ import androidx.lifecycle.MutableLiveData;
 import com.example.mobilnekt1.auth.presentation.Event;
 import com.example.mobilnekt1.match.data.MatchCallback;
 import com.example.mobilnekt1.match.data.MatchListener;
+import com.example.mobilnekt1.match.data.MatchmakingRepository;
 import com.example.mobilnekt1.match.data.MatchRepository;
 import com.example.mobilnekt1.match.domain.Match;
+import com.example.mobilnekt1.core.data.FirebaseProvider;
 
 public final class MatchLobbyViewModel extends AndroidViewModel {
     private final MatchRepository repository;
+    private final MatchmakingRepository matchmakingRepository;
     private final MutableLiveData<MatchLobbyState> state =
             new MutableLiveData<>(MatchLobbyState.idle());
     private final MutableLiveData<Event<String>> openGame = new MutableLiveData<>();
     private String matchId;
     private long lastObservedGameVersion;
+    private boolean finalizationRequested;
 
     public MatchLobbyViewModel(@NonNull Application application) {
         super(application);
         repository = new MatchRepository(application);
+        matchmakingRepository = new MatchmakingRepository(application);
     }
 
     public LiveData<MatchLobbyState> getState() {
@@ -39,6 +44,17 @@ public final class MatchLobbyViewModel extends AndroidViewModel {
         repository.createMatch(operationCallback());
     }
 
+    public void findRandomMatch() {
+        setLoading();
+        matchmakingRepository.findRegularMatch(operationCallback());
+    }
+
+    public void resumeMatch(String id) {
+        if (id == null || id.trim().isEmpty() || matchId != null) return;
+        matchId = id;
+        observeMatch(id);
+    }
+
     public void joinMatch(String code) {
         setLoading();
         repository.joinMatch(code, operationCallback());
@@ -51,6 +67,16 @@ public final class MatchLobbyViewModel extends AndroidViewModel {
         }
         setLoading();
         repository.selectGame(matchId, game, operationCallback());
+    }
+
+    public void abandonMatch() {
+        if (matchId == null) {
+            showError("Nema partije za napustanje.");
+            return;
+        }
+        setLoading();
+        matchmakingRepository.removeWaitingMatch(matchId);
+        repository.abandonMatch(matchId, operationCallback());
     }
 
     public void clearError() {
@@ -84,8 +110,20 @@ public final class MatchLobbyViewModel extends AndroidViewModel {
             @Override
             public void onChanged(Match match) {
                 state.setValue(MatchLobbyState.match(match));
+                int completed = match.completedGames == null ? 0 : match.completedGames.size();
+                if (match.isActive() && completed >= 6 && !finalizationRequested) {
+                    finalizationRequested = true;
+                    repository.finishMatch(id, new MatchCallback() {
+                        @Override public void onSuccess(String ignored) { }
+                        @Override public void onError(String message) {
+                            finalizationRequested = false;
+                            showError(message);
+                        }
+                    });
+                }
                 if (match.currentGame != null && !"none".equals(match.currentGame)
-                        && match.currentGameVersion > lastObservedGameVersion) {
+                        && match.currentGameVersion > lastObservedGameVersion
+                        && !isCurrentUserAbandoned(match)) {
                     lastObservedGameVersion = match.currentGameVersion;
                     openGame.setValue(new Event<>(match.currentGame));
                 }
@@ -96,6 +134,12 @@ public final class MatchLobbyViewModel extends AndroidViewModel {
                 showError(message);
             }
         });
+    }
+
+    private boolean isCurrentUserAbandoned(Match match) {
+        com.google.firebase.auth.FirebaseUser user = FirebaseProvider
+                .getInstance(getApplication()).getCurrentUser();
+        return user != null && user.getUid().equals(match.abandonedByUserId);
     }
 
     private void setLoading() {

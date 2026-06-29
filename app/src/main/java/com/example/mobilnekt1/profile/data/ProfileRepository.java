@@ -8,34 +8,38 @@ import com.example.mobilnekt1.profile.domain.UserProfile;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.ListenerRegistration;
-import com.google.firebase.firestore.SetOptions;
 import java.util.HashMap;
 import java.util.Map;
 
 public final class ProfileRepository {
     private final FirebaseProvider firebase;
+    private final UserRepository userRepository;
     private ListenerRegistration profileRegistration;
     private ListenerRegistration statsRegistration;
     private UserProfile profile;
     private PlayerStats stats = new PlayerStats();
 
-    public ProfileRepository(Context context) { firebase = FirebaseProvider.getInstance(context); }
+    public ProfileRepository(Context context) {
+        firebase = FirebaseProvider.getInstance(context);
+        userRepository = new UserRepository(context);
+    }
 
     public void listen(ProfileListener listener) {
         FirebaseUser user = firebase.getCurrentUser();
         if (user == null) { listener.onError("Sesija je istekla."); return; }
+        userRepository.ensureCurrentUserDefaults(true, new GameActionCallback() {
+            @Override public void onSuccess() { startListening(user, listener); }
+            @Override public void onError(String message) { listener.onError(message); }
+        });
+    }
+
+    private void startListening(FirebaseUser user, ProfileListener listener) {
         DocumentReference userRef = firebase.getFirestore().collection("users").document(user.getUid());
         DocumentReference statsRef = firebase.getFirestore().collection("playerStats").document(user.getUid());
         profileRegistration = userRef.addSnapshotListener((snapshot, error) -> {
             if (error != null) { listener.onError(message(error)); return; }
             if (snapshot == null || !snapshot.exists()) { listener.onError("Profil ne postoji."); return; }
-            profile = snapshot.toObject(UserProfile.class);
-            if (profile == null) profile = new UserProfile();
-            profile.uid = user.getUid();
-            if (profile.email == null) profile.email = user.getEmail();
-            if (profile.avatarId == null) profile.avatarId = "M1";
-            if (profile.avatarFrame == null) profile.avatarFrame = "standard";
-            if (profile.qrCodeValue == null) profile.qrCodeValue = "slagalica:user:" + user.getUid();
+            profile = UserRepository.toProfile(snapshot, user.getUid(), user.getEmail());
             listener.onChanged(profile, stats);
         });
         statsRegistration = statsRef.addSnapshotListener((snapshot, error) -> {
@@ -55,10 +59,7 @@ public final class ProfileRepository {
         values.put("avatarId", avatarId);
         values.put("avatarFrame", profile == null ? "standard" : profile.avatarFrame);
         values.put("qrCodeValue", "slagalica:user:" + user.getUid());
-        firebase.getFirestore().collection("users").document(user.getUid())
-                .set(values, SetOptions.merge())
-                .addOnSuccessListener(unused -> callback.onSuccess())
-                .addOnFailureListener(error -> callback.onError(message(error)));
+        userRepository.updateUser(values, callback);
     }
 
     public void stop() {

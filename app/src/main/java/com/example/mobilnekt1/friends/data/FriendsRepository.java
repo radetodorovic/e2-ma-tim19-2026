@@ -22,7 +22,6 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -474,7 +473,8 @@ public final class FriendsRepository {
     private void emit() {
         if (listener == null) return;
         List<FriendProfile> friends = new ArrayList<>(friendProfiles.values());
-        friends.sort(Comparator.comparing(profile -> profile.username.toLowerCase()));
+        Collections.sort(friends, (first, second) ->
+                first.username.compareToIgnoreCase(second.username));
         listener.onChanged(new FriendsSnapshot(friends, incomingRequests, outgoingRequests,
                 incomingInvites, outgoingInvites));
     }

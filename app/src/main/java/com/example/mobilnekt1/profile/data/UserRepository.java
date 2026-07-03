@@ -184,6 +184,9 @@ public final class UserRepository {
         putIfMissing(snapshot, values, "stars", 0L);
         putIfMissing(snapshot, values, "weeklyStars", 0L);
         putIfMissing(snapshot, values, "monthlyStars", 0L);
+        putIfMissing(snapshot, values, "weeklyMatches", 0L);
+        putIfMissing(snapshot, values, "monthlyMatches", 0L);
+        putIfMissing(snapshot, values, "fcmTokens", new java.util.ArrayList<String>());
         putIfMissing(snapshot, values, "starTokenProgress", 0L);
         putIfMissing(snapshot, values, "league", 0L);
         putIfMissing(snapshot, values, "inGame", false);

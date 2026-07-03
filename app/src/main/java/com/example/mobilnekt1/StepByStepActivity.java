@@ -10,7 +10,9 @@ import android.widget.TextView;
 
 import com.example.mobilnekt1.games.stepbystep.StepByStepEngine;
 import com.example.mobilnekt1.games.stepbystep.StepPuzzle;
-import com.example.mobilnekt1.games.stepbystep.StepPuzzleRepository;
+import com.example.mobilnekt1.games.content.GameContentRepository;
+import com.example.mobilnekt1.core.data.FirebaseProvider;
+import java.util.List;
 
 import java.util.Locale;
 
@@ -32,10 +34,13 @@ public class StepByStepActivity extends BaseKt1Activity {
     private int playerTwoScore;
     private boolean stealPhase;
     private long remainingMillis;
+    private boolean challengeMode;
+    private List<StepPuzzle> puzzles;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        challengeMode = getIntent().getBooleanExtra(EXTRA_CHALLENGE_GAME, false);
         setContentView(R.layout.activity_step_by_step);
 
         hintsContainer = findViewById(R.id.container_hints);
@@ -48,24 +53,30 @@ public class StepByStepActivity extends BaseKt1Activity {
         confirmButton = findViewById(R.id.button_confirm_step_answer);
         confirmButton.setOnClickListener(v -> checkAnswer());
 
-        if (savedInstanceState != null) {
-            roundIndex = savedInstanceState.getInt("roundIndex");
-            openedHints = savedInstanceState.getInt("openedHints", 1);
-            playerOneScore = savedInstanceState.getInt("playerOneScore");
-            playerTwoScore = savedInstanceState.getInt("playerTwoScore");
-            stealPhase = savedInstanceState.getBoolean("stealPhase");
-            remainingMillis = savedInstanceState.getLong("remainingMillis");
-            puzzle = StepPuzzleRepository.forRound(roundIndex);
-            render();
-            startTimer(Math.max(1000, remainingMillis));
-        } else {
-            startRound();
-        }
+        new GameContentRepository(FirebaseProvider.getInstance(this).getFirestore())
+                .loadStepPuzzles(new GameContentRepository.Callback<List<StepPuzzle>>() {
+                    @Override public void onSuccess(List<StepPuzzle> value) {
+                        puzzles = value;
+                        if (savedInstanceState != null) {
+                            roundIndex = savedInstanceState.getInt("roundIndex");
+                            openedHints = savedInstanceState.getInt("openedHints", 1);
+                            playerOneScore = savedInstanceState.getInt("playerOneScore");
+                            playerTwoScore = savedInstanceState.getInt("playerTwoScore");
+                            stealPhase = savedInstanceState.getBoolean("stealPhase");
+                            remainingMillis = savedInstanceState.getLong("remainingMillis");
+                            puzzle = puzzles.get(roundIndex % puzzles.size()); render();
+                            startTimer(Math.max(1000, remainingMillis));
+                        } else startRound();
+                    }
+                    @Override public void onError(String message) {
+                        showFinishDialog(getString(R.string.step_by_step_title), message);
+                    }
+                });
     }
 
     private void startRound() {
         cancelTimer();
-        puzzle = StepPuzzleRepository.forRound(roundIndex);
+        puzzle = puzzles.get(roundIndex % puzzles.size());
         openedHints = 1;
         stealPhase = false;
         remainingMillis = StepByStepEngine.ROUND_SECONDS * 1000L;
@@ -100,6 +111,8 @@ public class StepByStepActivity extends BaseKt1Activity {
                 remainingMillis = 0;
                 if (stealPhase) {
                     finishRound(false);
+                } else if (challengeMode) {
+                    finishRound(false);
                 } else {
                     beginStealPhase();
                 }
@@ -114,11 +127,12 @@ public class StepByStepActivity extends BaseKt1Activity {
             return;
         }
         if (StepByStepEngine.matches(answer, puzzle.solution)) {
-            int scorer = stealPhase ? otherPlayer() : activePlayer();
+            int scorer = challengeMode ? 1 : (stealPhase ? otherPlayer() : activePlayer());
             int points = stealPhase ? 5 : StepByStepEngine.pointsForHint(openedHints);
             addScore(scorer, points);
-            showInfoDialog(getString(R.string.correct_answer_title),
-                    getString(R.string.step_points_awarded, scorer, points));
+            showInfoDialog(getString(R.string.correct_answer_title), challengeMode
+                    ? "Osvojili ste " + points + " bodova."
+                    : getString(R.string.step_points_awarded, scorer, points));
             finishRound(true);
         } else {
             answerInput.setText("");
@@ -153,6 +167,11 @@ public class StepByStepActivity extends BaseKt1Activity {
     }
 
     private void showGameResult() {
+        if (challengeMode) {
+            showGameFinishDialog(getString(R.string.game_result),
+                    "Korak po korak je zavrsen.\nVasi bodovi: " + playerOneScore, playerOneScore);
+            return;
+        }
         String winner;
         if (playerOneScore == playerTwoScore) {
             winner = getString(R.string.draw_result);
@@ -160,8 +179,9 @@ public class StepByStepActivity extends BaseKt1Activity {
             winner = getString(R.string.player_wins,
                     playerOneScore > playerTwoScore ? 1 : 2);
         }
-        showFinishDialog(getString(R.string.game_result),
-                getString(R.string.two_player_score, playerOneScore, playerTwoScore) + "\n" + winner);
+        showGameFinishDialog(getString(R.string.game_result),
+                getString(R.string.two_player_score, playerOneScore, playerTwoScore) + "\n" + winner,
+                playerOneScore);
     }
 
     private int activePlayer() {
@@ -183,7 +203,8 @@ public class StepByStepActivity extends BaseKt1Activity {
 
     private void render() {
         roundView.setText(getString(R.string.round_value, roundIndex + 1, 2));
-        turnView.setText(getString(stealPhase ? R.string.steal_turn_value : R.string.player_turn_value,
+        turnView.setText(challengeMode ? "Samostalna igra"
+                : getString(stealPhase ? R.string.steal_turn_value : R.string.player_turn_value,
                 stealPhase ? otherPlayer() : activePlayer()));
         renderHints();
         renderPoints();
@@ -218,7 +239,8 @@ public class StepByStepActivity extends BaseKt1Activity {
     }
 
     private void renderScore() {
-        scoreView.setText(getString(R.string.two_player_score, playerOneScore, playerTwoScore));
+        scoreView.setText(challengeMode ? "Bodovi: " + playerOneScore
+                : getString(R.string.two_player_score, playerOneScore, playerTwoScore));
     }
 
     private void renderTimer() {

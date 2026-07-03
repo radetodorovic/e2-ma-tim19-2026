@@ -51,13 +51,21 @@ public final class MatchScoreRepository {
             if (!"active".equals(matchStatus)) {
                 throw new IllegalStateException("Partija nije aktivna.");
             }
-            if (!"finished".equals(game.getString(gameStatusField))) {
-                throw new IllegalStateException("Igra jos nije zavrsena.");
-            }
-
             List<String> completedGames = stringList(match.get("completedGames"));
+            if (!MatchGameSequence.isSupported(gameId)
+                    || !MatchGameSequence.isValidProgress(completedGames)) {
+                throw new IllegalStateException("Redosled igara u partiji nije ispravan.");
+            }
             if (completedGames.contains(gameId)) {
                 return completedGames.size() >= REQUIRED_GAMES;
+            }
+            String expectedGame = MatchGameSequence.nextGame(completedGames);
+            if (!gameId.equals(expectedGame)
+                    || !gameId.equals(match.getString("currentGame"))) {
+                throw new IllegalStateException("Ova igra trenutno nije na redu.");
+            }
+            if (!"finished".equals(game.getString(gameStatusField))) {
+                throw new IllegalStateException("Igra jos nije zavrsena.");
             }
 
             long player1Total = value(match.getLong("player1Score"))

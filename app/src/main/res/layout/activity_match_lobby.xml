@@ -124,78 +124,12 @@
         </LinearLayout>
 
         <Button
-            android:id="@+id/button_lobby_quiz"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:background="@drawable/button_primary"
-            android:enabled="false"
-            android:text="@string/start_quiz_match"
-            android:textAllCaps="false"
-            android:textColor="@android:color/white" />
-
-        <Button
-            android:id="@+id/button_lobby_step_by_step"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:background="@drawable/button_secondary"
-            android:enabled="false"
-            android:text="@string/start_step_by_step_match"
-            android:textAllCaps="false"
-            android:textColor="@android:color/white" />
-
-        <Button
-            android:id="@+id/button_lobby_my_number"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:background="@drawable/button_primary"
-            android:enabled="false"
-            android:text="@string/start_my_number_match"
-            android:textAllCaps="false"
-            android:textColor="@android:color/white" />
-
-        <Button
-            android:id="@+id/button_lobby_connections"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:background="@drawable/button_secondary"
-            android:enabled="false"
-            android:text="@string/start_connections_match"
-            android:textAllCaps="false"
-            android:textColor="@android:color/white" />
-
-        <Button
             android:id="@+id/button_random_match"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:background="@drawable/button_secondary"
             android:text="@string/find_random_match"
-            android:textAllCaps="false"
-            android:textColor="@android:color/white" />
-
-        <Button
-            android:id="@+id/button_lobby_associations"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:background="@drawable/button_primary"
-            android:enabled="false"
-            android:text="@string/start_associations_match"
-            android:textAllCaps="false"
-            android:textColor="@android:color/white" />
-
-        <Button
-            android:id="@+id/button_lobby_skocko"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:background="@drawable/button_secondary"
-            android:enabled="false"
-            android:text="@string/start_skocko_match"
             android:textAllCaps="false"
             android:textColor="@android:color/white" />
 

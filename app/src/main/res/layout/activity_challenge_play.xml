@@ -1,0 +1,19 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:padding="24dp" android:background="@color/background">
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Izazov" android:textSize="28sp" android:textStyle="bold" android:textColor="@color/primary" />
+    <TextView android:id="@+id/text_challenge_progress" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:layout_marginTop="18dp" android:textSize="18sp" />
+    <TextView android:id="@+id/text_challenge_total" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:layout_marginTop="10dp" android:textSize="18sp" />
+    <Button android:id="@+id/button_play_challenge_game" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:layout_marginTop="24dp"
+        android:background="@drawable/button_primary" android:text="Odigraj sledecu igru"
+        android:textAllCaps="false" android:textColor="@android:color/white" />
+    <TextView android:id="@+id/text_challenge_results" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:layout_marginTop="20dp" android:textSize="17sp" />
+    <Button android:id="@+id/button_claim_challenge_reward" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:layout_marginTop="12dp"
+        android:text="Preuzmi nagradu" android:textAllCaps="false" android:visibility="gone" />
+</LinearLayout>

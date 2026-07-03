@@ -48,6 +48,23 @@ public final class MatchRewardCalculator {
         return -WIN_BASE_STARS + scoreBonus(score);
     }
 
+    public static Result calculateTournament(String player1Id, String player2Id,
+                                             long player1Score, long player2Score,
+                                             String stage, String abandonedByUserId) {
+        Result outcome = calculate(player1Id, player2Id, player1Score, player2Score,
+                MatchType.REGULAR, abandonedByUserId);
+        if (outcome.winnerId == null) return outcome;
+        long player1Delta = 0, player2Delta = 0;
+        if (outcome.winnerId.equals(player1Id)) {
+            player1Delta = winnerStars(player1Score) + ("final".equals(stage) ? 10 : 0);
+            if ("final".equals(stage) && abandonedByUserId == null) player2Delta = loserStars(player2Score);
+        } else {
+            player2Delta = winnerStars(player2Score) + ("final".equals(stage) ? 10 : 0);
+            if ("final".equals(stage) && abandonedByUserId == null) player1Delta = loserStars(player1Score);
+        }
+        return new Result(outcome.winnerId, outcome.loserId, player1Delta, player2Delta);
+    }
+
     private static long scoreBonus(long score) {
         return Math.max(0, score) / POINTS_PER_STAR;
     }

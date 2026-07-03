@@ -1,6 +1,5 @@
 package com.example.mobilnekt1.notifications.data;
 
-import com.example.mobilnekt1.games.shared.GameActionCallback;
 import com.example.mobilnekt1.notifications.domain.NotificationItem;
 import com.example.mobilnekt1.notifications.presentation.NotificationChannels;
 import com.google.firebase.messaging.FirebaseMessagingService;
@@ -10,6 +9,11 @@ import java.util.Map;
 import java.util.UUID;
 
 public final class SlagalicaMessagingService extends FirebaseMessagingService {
+    @Override public void onNewToken(String token) {
+        super.onNewToken(token);
+        new PushTokenRepository(this).save(token);
+    }
+
     @Override public void onMessageReceived(RemoteMessage remoteMessage) {
         Map<String, String> data = remoteMessage.getData();
         String channel = value(data.get("channel"), NotificationChannels.OTHER);
@@ -23,10 +27,6 @@ public final class SlagalicaMessagingService extends FirebaseMessagingService {
         item.title = title; item.message = message; item.action = action;
         NotificationChannels.create(this);
         NotificationChannels.show(this, item);
-        new NotificationRepository(this).saveIncoming(channel, title, message, action, new GameActionCallback() {
-            @Override public void onSuccess() { }
-            @Override public void onError(String ignored) { }
-        });
     }
 
     private String value(String candidate, String fallback) {

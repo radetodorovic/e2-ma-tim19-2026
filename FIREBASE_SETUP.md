@@ -6,7 +6,8 @@ The authentication implementation requires a Firebase project owned by the team.
    `com.example.mobilnekt1`.
 2. Download `google-services.json` and place it in `app/google-services.json`. The file is
    intentionally ignored by Git so each environment can select its Firebase project.
-3. In **Authentication > Sign-in method**, enable **Email/Password**.
+3. In **Authentication > Sign-in method**, enable **Email/Password** and **Anonymous**.
+   Anonymous authentication is required for the specification's unregistered-player mode.
 4. Create a Cloud Firestore database. Do not leave it in unrestricted test mode.
    The app uses `users/{uid}` for account data and `matches/{matchId}` for the shared
    two-device lobby and current match state.
@@ -24,15 +25,26 @@ The authentication implementation requires a Firebase project owned by the team.
    firebase deploy --only firestore:rules
    ```
 
-7. Build and run the app:
+7. Rang-list rewards and cycle resets run in scheduled Cloud Functions. The Firebase
+   project must use the Blaze plan. Install and deploy them:
+
+   ```powershell
+   cd functions
+   npm install
+   cd ..
+   firebase deploy --only functions
+   ```
+
+8. Build and run the app:
 
    ```powershell
    .\gradlew.bat assembleDebug
    ```
 
-Email and username login work through Firebase Authentication and Firestore. This setup works
-on the free Spark plan. For production, move username lookup behind trusted backend code,
+Email and username login work through Firebase Authentication and Firestore. Scheduled ranking
+settlement requires the Blaze plan. For production, move username lookup behind trusted backend code,
 enable Firebase App Check, and configure authorized email action domains.
+
 
 ## Two-device lobby check
 

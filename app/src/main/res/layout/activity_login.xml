@@ -64,6 +64,16 @@
                 android:textAllCaps="false"
                 android:textColor="@android:color/white" />
 
+            <Button
+                android:id="@+id/button_guest_login"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/button_outline"
+                android:text="@string/play_as_guest"
+                android:textAllCaps="false"
+                android:textColor="@color/accent" />
+
             <ProgressBar
                 android:id="@+id/auth_progress"
                 android:layout_width="wrap_content"

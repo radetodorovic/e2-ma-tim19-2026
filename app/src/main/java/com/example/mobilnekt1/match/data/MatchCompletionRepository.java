@@ -8,6 +8,7 @@ import com.example.mobilnekt1.match.domain.MatchRewardCalculator;
 import com.example.mobilnekt1.match.domain.MatchGameSequence;
 import com.example.mobilnekt1.match.domain.MatchType;
 import com.example.mobilnekt1.match.domain.StarTokenProgress;
+import com.example.mobilnekt1.profile.domain.LeaguePolicy;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -155,6 +156,11 @@ public final class MatchCompletionRepository {
             MatchRewardCalculator.Result reward = MatchRewardCalculator.calculate(
                     player1Id, player2Id, player1Score, player2Score,
                     matchType, effectiveAbandonedBy);
+            String tournamentStage = match.getString("tournamentStage");
+            if (MatchType.TOURNAMENT.equals(matchType)) {
+                reward = MatchRewardCalculator.calculateTournament(player1Id, player2Id,
+                        player1Score, player2Score, tournamentStage, effectiveAbandonedBy);
+            }
 
             DocumentReference player1StatsRef = firebase.getFirestore()
                     .collection("playerStats").document(player1Id);
@@ -168,9 +174,14 @@ public final class MatchCompletionRepository {
             }
 
             UserSettlement player1Settlement = settledUserValues(
-                    player1, reward.player1StarDelta, matchId);
+                    player1, reward.player1StarDelta, matchId, matchType);
             UserSettlement player2Settlement = settledUserValues(
-                    player2, reward.player2StarDelta, matchId);
+                    player2, reward.player2StarDelta, matchId, matchType);
+            if (MatchType.TOURNAMENT.equals(matchType) && reward.winnerId != null) {
+                long fixedTokens = "final".equals(tournamentStage) ? 3 : 2;
+                if (reward.winnerId.equals(player1Id)) player1Settlement.addTokens(fixedTokens);
+                else player2Settlement.addTokens(fixedTokens);
+            }
 
             if (!player1Id.equals(effectiveAbandonedBy)) {
                 transaction.update(player1Ref, player1Settlement.values);
@@ -200,13 +211,19 @@ public final class MatchCompletionRepository {
     }
 
     private UserSettlement settledUserValues(DocumentSnapshot user, long starDelta,
-                                              String matchId) {
+                                              String matchId, String matchType) {
         Map<String, Object> values = new HashMap<>();
         StarTokenProgress.Result tokenProgress = StarTokenProgress.apply(
                 value(user.getLong("starTokenProgress")), starDelta);
-        values.put("stars", nonNegative(value(user.getLong("stars")) + starDelta));
+        long stars = nonNegative(value(user.getLong("stars")) + starDelta);
+        values.put("stars", stars);
+        values.put("league", LeaguePolicy.leagueForStars(stars));
         values.put("weeklyStars", nonNegative(value(user.getLong("weeklyStars")) + starDelta));
         values.put("monthlyStars", nonNegative(value(user.getLong("monthlyStars")) + starDelta));
+        if (MatchType.REGULAR.equals(matchType)) {
+            values.put("weeklyMatches", value(user.getLong("weeklyMatches")) + 1);
+            values.put("monthlyMatches", value(user.getLong("monthlyMatches")) + 1);
+        }
         values.put("tokens", value(user.getLong("tokens")) + tokenProgress.earnedTokens);
         values.put("starTokenProgress", tokenProgress.remainingProgress);
         values.put("inGame", false);
@@ -304,11 +321,16 @@ public final class MatchCompletionRepository {
 
     private static final class UserSettlement {
         final Map<String, Object> values;
-        final long tokenReward;
+        long tokenReward;
 
         UserSettlement(Map<String, Object> values, long tokenReward) {
             this.values = values;
             this.tokenReward = tokenReward;
+        }
+        void addTokens(long amount) {
+            Object current = values.get("tokens");
+            values.put("tokens", (current instanceof Number ? ((Number) current).longValue() : 0) + amount);
+            tokenReward += amount;
         }
     }
 }

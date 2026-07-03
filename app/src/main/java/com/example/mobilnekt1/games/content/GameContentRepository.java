@@ -32,6 +32,17 @@ public final class GameContentRepository {
         }
     }
 
+    public static final class AssociationPuzzle {
+        public final List<List<String>> fields;
+        public final List<String> columnSolutions;
+        public final String finalSolution;
+        public AssociationPuzzle(List<List<String>> fields, List<String> columnSolutions,
+                                 String finalSolution) {
+            this.fields = fields; this.columnSolutions = columnSolutions;
+            this.finalSolution = finalSolution;
+        }
+    }
+
     private final FirebaseFirestore firestore;
 
     public GameContentRepository(FirebaseFirestore firestore) {
@@ -66,6 +77,39 @@ public final class GameContentRepository {
                     else seedSteps(callback);
                 })
                 .addOnFailureListener(error -> callback.onError(message(error)));
+    }
+
+    public void loadAssociationPuzzle(Callback<AssociationPuzzle> callback) {
+        firestore.collection("associationPuzzles").document("default").get()
+                .addOnSuccessListener(document -> {
+                    AssociationPuzzle loaded = associationFrom(document);
+                    if (loaded != null) callback.onSuccess(loaded);
+                    else seedAssociation(callback);
+                }).addOnFailureListener(error -> callback.onError(message(error)));
+    }
+
+    private void seedAssociation(Callback<AssociationPuzzle> callback) {
+        AssociationPuzzle value = new AssociationPuzzle(Arrays.asList(
+                Arrays.asList("Kos", "Tabla", "Lopta", "Parket"),
+                Arrays.asList("Servis", "Mreza", "Reket", "Set"),
+                Arrays.asList("Gol", "Kopacke", "Penal", "Stadion"),
+                Arrays.asList("Bazen", "Kapica", "Staza", "Plivanje")),
+                Arrays.asList("Kosarka", "Tenis", "Fudbal", "Plivanje"), "Sport");
+        Map<String, Object> data = new HashMap<>(); data.put("fields", value.fields);
+        data.put("columnSolutions", value.columnSolutions); data.put("finalSolution", value.finalSolution);
+        firestore.collection("associationPuzzles").document("default").set(data)
+                .addOnSuccessListener(unused -> callback.onSuccess(value))
+                .addOnFailureListener(error -> callback.onError(message(error)));
+    }
+
+    @SuppressWarnings("unchecked") private AssociationPuzzle associationFrom(DocumentSnapshot document) {
+        List<List<String>> fields = (List<List<String>>) document.get("fields");
+        List<String> solutions = (List<String>) document.get("columnSolutions");
+        String finalSolution = document.getString("finalSolution");
+        if (fields == null || fields.size() != 4 || solutions == null || solutions.size() != 4
+                || finalSolution == null) return null;
+        for (List<String> column : fields) if (column == null || column.size() != 4) return null;
+        return new AssociationPuzzle(fields, solutions, finalSolution);
     }
 
     private void seedQuiz(Callback<List<QuizQuestion>> callback) {

@@ -16,6 +16,12 @@
     <string name="new_password">Nova lozinka</string>
     <string name="repeat_new_password">Ponovljena nova lozinka</string>
     <string name="login">Prijavi se</string>
+    <string name="challenges_title">Regionalni izazovi</string>
+    <string name="challenge_create">Postavi izazov</string>
+    <string name="challenge_join">Prihvati izazov</string>
+    <string name="challenge_star_stake">Ulog zvezda (0-10)</string>
+    <string name="challenge_token_stake">Ulog tokena (0-2)</string>
+    <string name="play_as_guest">Igraj bez registracije</string>
     <string name="register">Registruj se</string>
     <string name="reset_password">Reset lozinke</string>
     <string name="confirm">Potvrdi</string>
@@ -39,10 +45,8 @@
     <string name="offered_numbers">Ponudjeni brojevi</string>
     <string name="stop_target">STOP trazeni broj</string>
     <string name="stop_numbers">STOP brojevi</string>
-    <string name="shake_placeholder">Shake za stopiranje - placeholder za KT1</string>
     <string name="expression">Izraz</string>
     <string name="clear">Obrisi</string>
-    <string name="not_implemented">Ovo je GUI placeholder za KT1.</string>
     <string name="ok">U redu</string>
     <string name="register_link">Nemate nalog? Registrujte se</string>
     <string name="confirmation_note">Otvorite link koji je poslat na vas email, zatim se vratite u aplikaciju i proverite verifikaciju.</string>
@@ -50,9 +54,7 @@
     <string name="available_screens">Dostupni ekrani</string>
     <string name="profile_title">Profil korisnika</string>
     <string name="statistics_title">Statistika igraca</string>
-    <string name="statistics_note">Mock statistika za KT1. Podaci nisu ucitani iz baze.</string>
     <string name="change_avatar">Promeni avatar</string>
-    <string name="avatar_changed_mock">Avatar je promenjen u mock rezimu.</string>
     <string name="friend_qr">QR kod za poziv prijatelja</string>
     <string name="profile_avatar">Avatar korisnika</string>
     <string name="qr_generation_error">QR kod nije moguce generisati.</string>
@@ -135,6 +137,7 @@
     <string name="shake_unavailable">Akcelerometar nije dostupan; koristite STOP dugme.</string>
     <string name="shake_detected">Shake je detektovan.</string>
     <string name="invalid_expression_title">Neispravan izraz</string>
+    <string name="invalid_expression_sequence">Ovaj znak ne moze da stoji na tom mestu.</string>
     <string name="player_result_title">Rezultat igraca %1$d</string>
     <string name="no_answer">bez odgovora</string>
     <string name="my_number_header_value">Runda %1$d/2 | Unosi Igrac %2$d | Rundu zapoceo Igrac %3$d</string>
@@ -238,4 +241,13 @@
     <string name="step_percent_row">Korak %1$d: %2$.1f%%</string>
     <string name="total_matches_value">Ukupno odigranih partija: %1$d</string>
     <string name="win_loss_value">Pobede: %1$.1f%% | Porazi: %2$.1f%%</string>
+    <string name="ranking_title">Rang-liste</string>
+    <string name="weekly_ranking">Nedeljna rang-lista</string>
+    <string name="monthly_ranking">Mesecna rang-lista</string>
+    <string name="regions_title">Regioni Srbije</string>
+    <string name="supported_regions">Unesite: Beograd, Vojvodina, Sumadija i Zapadna Srbija ili Juzna i Istocna Srbija</string>
+    <string name="chat_title">Regionalni cet</string>
+    <string name="chat_hint">Napisite poruku</string>
+    <string name="send">Posalji</string>
+    <string name="daily_missions_title">Dnevne misije</string>
 </resources>

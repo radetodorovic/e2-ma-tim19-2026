@@ -12,6 +12,10 @@ public final class MyNumberGenerator {
         this(new Random());
     }
 
+    public MyNumberGenerator(long seed) {
+        this(new Random(seed));
+    }
+
     MyNumberGenerator(Random random) {
         this.random = random;
     }

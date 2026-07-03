@@ -1,6 +1,7 @@
 package com.example.mobilnekt1.games.skocko.domain;
 
 public final class SkockoEngine {
+    public static final String[] SYMBOLS = {"Skocko", "Kvadrat", "Krug", "Srce", "Trougao", "Zvezda"};
     private SkockoEngine() { }
 
     public static Result evaluate(int[] solution, int[] guess) {
@@ -36,6 +37,13 @@ public final class SkockoEngine {
         if (attemptNumber <= 2) return 20;
         if (attemptNumber <= 4) return 15;
         return 10;
+    }
+
+    public static int[] solutionForSeed(String seed) {
+        java.util.Random random = new java.util.Random(seed == null ? System.nanoTime() : seed.hashCode());
+        int[] solution = new int[4];
+        for (int i = 0; i < solution.length; i++) solution[i] = random.nextInt(SYMBOLS.length);
+        return solution;
     }
 
     public static final class Result {

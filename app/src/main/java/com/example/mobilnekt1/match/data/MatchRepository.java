@@ -197,39 +197,6 @@ public final class MatchRepository {
                 });
     }
 
-    public void selectGame(String matchId, String game, MatchCallback callback) {
-        FirebaseUser user = firebase.getCurrentUser();
-        if (!ensureReady(callback) || user == null) {
-            if (user == null) {
-                callback.onError("Sesija je istekla. Prijavite se ponovo.");
-            }
-            return;
-        }
-        DocumentReference reference = firebase.getFirestore().collection("matches").document(matchId);
-        firebase.getFirestore().runTransaction(transaction -> {
-            DocumentSnapshot snapshot = transaction.get(reference);
-            if (!snapshot.exists() || !"active".equals(snapshot.getString("status"))) {
-                throw new IllegalStateException("Sacekajte da se drugi igrac pridruzi.");
-            }
-            Object completedValue = snapshot.get("completedGames");
-            if (completedValue instanceof java.util.List
-                    && ((java.util.List<?>) completedValue).contains(game)) {
-                throw new IllegalStateException("Ova igra je vec odigrana u trenutnoj partiji.");
-            }
-            String player1Id = snapshot.getString("player1Id");
-            String player2Id = snapshot.getString("player2Id");
-            if (!user.getUid().equals(player1Id) && !user.getUid().equals(player2Id)) {
-                throw new IllegalStateException("Niste ucesnik ove partije.");
-            }
-            transaction.update(reference,
-                    "currentGame", game,
-                    "currentGameVersion", FieldValue.increment(1),
-                    "updatedAt", FieldValue.serverTimestamp());
-            return null;
-        }).addOnSuccessListener(unused -> callback.onSuccess(matchId))
-                .addOnFailureListener(error -> callback.onError(messageFor(error)));
-    }
-
     public void stopListening() {
         if (registration != null) {
             registration.remove();

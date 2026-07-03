@@ -8,3 +8,6 @@ app/build/
 *.apk
 *.aab
 app/google-services.json
+functions/node_modules/
+service-account*.json
+*firebase-adminsdk*.json

@@ -48,4 +48,18 @@ public final class MatchRewardCalculatorTest {
         assertEquals(0, result.player1StarDelta);
         assertEquals(0, result.player2StarDelta);
     }
+
+    @Test public void tournamentSemifinal_rewardsOnlyWinnerWithRegularStars() {
+        MatchRewardCalculator.Result result = MatchRewardCalculator.calculateTournament(
+                "A", "B", 120, 80, "semifinal1", null);
+        assertEquals(13, result.player1StarDelta);
+        assertEquals(0, result.player2StarDelta);
+    }
+
+    @Test public void tournamentFinal_addsTenStarsAndRewardsLosingFinalist() {
+        MatchRewardCalculator.Result result = MatchRewardCalculator.calculateTournament(
+                "A", "B", 120, 80, "final", null);
+        assertEquals(23, result.player1StarDelta);
+        assertEquals(-8, result.player2StarDelta);
+    }
 }

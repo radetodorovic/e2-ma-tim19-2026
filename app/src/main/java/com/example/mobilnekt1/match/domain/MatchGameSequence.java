@@ -31,4 +31,20 @@ public final class MatchGameSequence {
         }
         return NONE;
     }
+
+    public static boolean isSupported(String game) {
+        return GAMES.contains(game);
+    }
+
+    public static boolean isValidProgress(List<String> completedGames) {
+        if (completedGames == null || completedGames.size() > GAMES.size()) {
+            return false;
+        }
+        for (int index = 0; index < completedGames.size(); index++) {
+            if (!GAMES.get(index).equals(completedGames.get(index))) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

@@ -53,6 +53,16 @@
                 android:textColor="@android:color/white" />
 
             <Button
+                android:id="@+id/button_tournament"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/button_primary"
+                android:text="Turnir"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white" />
+
+            <Button
                 android:id="@+id/button_my_number"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -121,6 +131,38 @@
                 android:text="@string/profile_title"
                 android:textAllCaps="false"
                 android:textColor="@color/accent" />
+
+            <Button
+                android:id="@+id/button_ranking"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/button_outline"
+                android:text="@string/ranking_title"
+                android:textAllCaps="false"
+                android:textColor="@color/accent" />
+
+            <Button
+                android:id="@+id/button_regions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/button_outline"
+                android:text="@string/regions_title"
+                android:textAllCaps="false"
+                android:textColor="@color/accent" />
+
+            <Button
+                android:id="@+id/button_chat"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="12dp" android:background="@drawable/button_outline"
+                android:text="@string/chat_title" android:textAllCaps="false" android:textColor="@color/accent" />
+
+            <Button
+                android:id="@+id/button_daily_missions"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="12dp" android:background="@drawable/button_outline"
+                android:text="@string/daily_missions_title" android:textAllCaps="false" android:textColor="@color/accent" />
 
             <Button
                 android:id="@+id/button_friends"

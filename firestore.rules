@@ -10,6 +10,135 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == userId;
     }
 
+    match /regionStats/{regionId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    match /regionalChats/{region}/messages/{messageId} {
+      function memberOfRegion() {
+        return signedIn()
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.region == region;
+      }
+      allow read: if memberOfRegion();
+      allow create: if memberOfRegion()
+        && request.resource.data.keys().hasOnly(['senderId', 'senderName', 'text', 'createdAt'])
+        && request.resource.data.senderId == request.auth.uid
+        && request.resource.data.senderName == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 500;
+      allow update, delete: if false;
+    }
+
+    match /challenges/{challengeId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly([
+          'creatorId', 'creatorName', 'region', 'status', 'starStake',
+          'tokenStake', 'participantIds', 'participantNames', 'participantScores', 'claimedIds', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.creatorId == request.auth.uid
+        && request.resource.data.status == 'open'
+        && request.resource.data.starStake >= 0
+        && request.resource.data.starStake <= 10
+        && request.resource.data.tokenStake >= 0
+        && request.resource.data.tokenStake <= 2
+        && request.resource.data.participantIds == [request.auth.uid];
+      allow update: if signedIn()
+        && (
+          (resource.data.status == 'open' && (
+            (
+            !(request.auth.uid in resource.data.participantIds)
+            && request.auth.uid in request.resource.data.participantIds
+            && request.resource.data.participantIds.hasAll(resource.data.participantIds)
+            && request.resource.data.participantIds.size() == resource.data.participantIds.size() + 1
+            && request.resource.data.participantIds.size() <= 4
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'participantIds', 'participantNames', 'status', 'updatedAt'
+            ])
+            && request.resource.data.status == (
+              request.resource.data.participantIds.size() == 4 ? 'active' : 'open'
+            )
+            ) || (
+            request.auth.uid == resource.data.creatorId
+            && resource.data.participantIds.size() >= 2
+            && request.resource.data.status == 'active'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+            ) || (
+            request.auth.uid == resource.data.creatorId
+            && resource.data.participantIds.size() == 1
+            && request.resource.data.status == 'cancelled'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+            )
+          )) || (
+            request.auth.uid in resource.data.participantIds
+            && resource.data.status == 'active'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'participantScores', 'status', 'updatedAt'
+            ])
+            && request.resource.data.participantScores[request.auth.uid] >= -25
+          ) || (
+            request.auth.uid in resource.data.participantIds
+            && resource.data.status == 'finished'
+            && request.resource.data.status == 'finished'
+            && request.auth.uid in request.resource.data.claimedIds
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['claimedIds', 'updatedAt'])
+          )
+        );
+      allow delete: if false;
+
+      match /runs/{userId} {
+        allow read: if signedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/challenges/$(challengeId)).data.participantIds;
+        allow create, update: if signedIn()
+          && request.auth.uid == userId
+          && request.auth.uid in get(/databases/$(database)/documents/challenges/$(challengeId)).data.participantIds
+          && get(/databases/$(database)/documents/challenges/$(challengeId)).data.status == 'active'
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.totalScore >= -25;
+        allow delete: if false;
+      }
+    }
+
+    match /tournaments/{tournamentId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly([
+          'creatorId', 'status', 'participantIds', 'participantNames',
+          'semifinalOneIds', 'semifinalTwoIds', 'semifinalOneMatchId',
+          'semifinalTwoMatchId', 'semifinalOneWinnerId', 'semifinalTwoWinnerId',
+          'finalMatchId', 'winnerId', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.creatorId == request.auth.uid
+        && request.resource.data.status == 'waiting'
+        && request.resource.data.participantIds == [request.auth.uid];
+      allow update: if signedIn()
+        && (
+          (
+            resource.data.status == 'waiting'
+            && !(request.auth.uid in resource.data.participantIds)
+            && request.auth.uid in request.resource.data.participantIds
+            && request.resource.data.participantIds.hasAll(resource.data.participantIds)
+            && request.resource.data.participantIds.size() == resource.data.participantIds.size() + 1
+            && request.resource.data.participantIds.size() <= 4
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'participantIds', 'participantNames', 'status', 'semifinalOneIds',
+              'semifinalTwoIds', 'semifinalOneMatchId', 'semifinalTwoMatchId', 'updatedAt'
+            ])
+          ) || (
+            request.auth.uid in resource.data.participantIds
+            && resource.data.status in ['semifinals', 'final']
+            && request.resource.data.status in ['final', 'finished']
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status', 'semifinalOneWinnerId', 'semifinalTwoWinnerId',
+              'finalMatchId', 'winnerId', 'updatedAt'
+            ])
+          )
+        );
+      allow delete: if false;
+    }
+
     match /usernames/{username} {
       allow read: if true;
       allow create: if signedIn()
@@ -51,31 +180,43 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create: if ownsDocument(userId)
         && request.resource.data.keys().hasOnly([
-          'uid', 'email', 'username', 'usernameNormalized', 'region',
+          'uid', 'email', 'username', 'usernameNormalized', 'region', 'regionLatitude', 'regionLongitude',
+          'isGuest',
           'avatarId', 'avatarFrame', 'qrCodeValue',
-          'tokens', 'stars', 'weeklyStars', 'monthlyStars', 'starTokenProgress', 'league',
-          'isOnline', 'inGame', 'activeMatchId', 'lastSettledMatchId',
+          'tokens', 'stars', 'weeklyStars', 'monthlyStars', 'weeklyMatches', 'monthlyMatches', 'starTokenProgress', 'league',
+          'isOnline', 'inGame', 'activeMatchId', 'lastSettledMatchId', 'fcmTokens',
           'lastDailyTokenClaimAt', 'createdAt', 'updatedAt'
         ])
         && request.resource.data.uid == userId
-        && request.resource.data.email == request.auth.token.email
+        && ((request.auth.token.firebase.sign_in_provider != 'anonymous'
+              && request.resource.data.email == request.auth.token.email
+              && request.resource.data.isGuest == false)
+            || (request.auth.token.firebase.sign_in_provider == 'anonymous'
+              && request.resource.data.email == ''
+              && request.resource.data.isGuest == true))
         && request.resource.data.tokens == 5
         && request.resource.data.stars == 0
         && request.resource.data.weeklyStars == 0
         && request.resource.data.monthlyStars == 0
+        && request.resource.data.weeklyMatches == 0
+        && request.resource.data.monthlyMatches == 0
         && request.resource.data.starTokenProgress == 0
         && request.resource.data.league == 0
         && request.resource.data.isOnline == false
         && request.resource.data.inGame == false;
       allow update: if (
-          (ownsDocument(userId) && request.resource.data.email == request.auth.token.email)
+          (ownsDocument(userId) && ((request.auth.token.firebase.sign_in_provider != 'anonymous'
+              && request.resource.data.email == request.auth.token.email)
+            || (request.auth.token.firebase.sign_in_provider == 'anonymous'
+              && request.resource.data.email == ''
+              && request.resource.data.isGuest == true)))
           || (updatesMatchParticipant(userId)
             && request.resource.data.email == resource.data.email)
         )
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'uid', 'email', 'avatarId', 'avatarFrame', 'qrCodeValue',
-          'tokens', 'stars', 'weeklyStars', 'monthlyStars', 'starTokenProgress', 'league',
-          'isOnline', 'inGame', 'activeMatchId', 'lastSettledMatchId',
+          'uid', 'email', 'isGuest', 'avatarId', 'avatarFrame', 'qrCodeValue',
+          'tokens', 'stars', 'weeklyStars', 'monthlyStars', 'weeklyMatches', 'monthlyMatches', 'starTokenProgress', 'league',
+          'isOnline', 'inGame', 'activeMatchId', 'lastSettledMatchId', 'fcmTokens',
           'lastDailyTokenClaimAt', 'createdAt', 'updatedAt'
         ])
         && request.resource.data.uid == userId
@@ -83,6 +224,8 @@ service cloud.firestore {
         && request.resource.data.stars >= 0
         && request.resource.data.weeklyStars >= 0
         && request.resource.data.monthlyStars >= 0
+        && request.resource.data.weeklyMatches >= 0
+        && request.resource.data.monthlyMatches >= 0
         && request.resource.data.starTokenProgress >= 0
         && request.resource.data.starTokenProgress < 50
         && request.resource.data.league >= 0
@@ -90,9 +233,30 @@ service cloud.firestore {
       allow delete: if false;
 
       match /notifications/{notificationId} {
-        allow read, create: if ownsDocument(userId);
+        allow read: if ownsDocument(userId);
+        allow create: if ownsDocument(userId) || (
+          signedIn()
+          && request.auth.uid != userId
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.channel == 'chat'
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.region
+            == get(/databases/$(database)/documents/users/$(userId)).data.region
+          && request.resource.data.keys().hasOnly([
+            'senderId', 'channel', 'title', 'message', 'action', 'read', 'createdAt'
+          ])
+          && request.resource.data.read == false
+        );
         allow update: if ownsDocument(userId)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+        allow delete: if false;
+      }
+
+      match /dailyMissions/{day} {
+        allow read: if ownsDocument(userId);
+        allow create, update: if ownsDocument(userId)
+          && request.resource.data.keys().hasOnly([
+            'winMatch', 'sendChat', 'playFriendly', 'winTournament', 'allRewarded', 'updatedAt'
+          ]);
         allow delete: if false;
       }
     }
@@ -277,7 +441,52 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    match /associationPuzzles/{puzzleId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update, delete: if false;
+    }
+
     match /matches/{matchId} {
+      function expectedGame(completedCount) {
+        return completedCount == 0 ? 'koZnaZna'
+          : completedCount == 1 ? 'spojnice'
+          : completedCount == 2 ? 'associations'
+          : completedCount == 3 ? 'skocko'
+          : completedCount == 4 ? 'stepByStep'
+          : completedCount == 5 ? 'myNumber'
+          : 'none';
+      }
+
+      function validCompletedGames(games) {
+        return games.size() <= 6
+          && (games.size() < 1 || games[0] == 'koZnaZna')
+          && (games.size() < 2 || games[1] == 'spojnice')
+          && (games.size() < 3 || games[2] == 'associations')
+          && (games.size() < 4 || games[3] == 'skocko')
+          && (games.size() < 5 || games[4] == 'stepByStep')
+          && (games.size() < 6 || games[5] == 'myNumber');
+      }
+
+      function validGameFlow() {
+        let before = resource.data.completedGames;
+        let after = request.resource.data.completedGames;
+        let advances = after.size() == before.size() + 1
+          && validCompletedGames(before)
+          && validCompletedGames(after)
+          && resource.data.currentGame == expectedGame(before.size())
+          && request.resource.data.currentGame == expectedGame(after.size())
+          && request.resource.data.currentGameVersion == resource.data.currentGameVersion + 1;
+        let unchanged = after == before
+          && request.resource.data.currentGameVersion == resource.data.currentGameVersion
+          && (
+            request.resource.data.currentGame == resource.data.currentGame
+            || (request.resource.data.status in ['finished', 'abandoned']
+              && request.resource.data.currentGame == 'none')
+          );
+        return advances || unchanged;
+      }
+
       function cancelledByInviteParticipant() {
         let invite = getAfter(
           /databases/$(database)/documents/matchInvites/$(matchId)
@@ -312,15 +521,29 @@ service cloud.firestore {
           'player1Score', 'player2Score', 'player1StarDelta', 'player2StarDelta',
           'player1TokenReward', 'player2TokenReward',
           'player1InGame', 'player2InGame', 'settlementApplied', 'completedGames',
+          'tournamentId', 'tournamentStage',
           'createdAt', 'startedAt', 'finishedAt', 'updatedAt'
         ])
-        && request.resource.data.player1Id == request.auth.uid
-        && request.resource.data.player2Id == null
-        && request.resource.data.status == 'waiting'
-        && request.resource.data.matchType in ['regular', 'friendly', 'tournament', 'challenge']
-        && request.resource.data.currentGame == 'none'
-        && request.resource.data.currentGameVersion == 0
-        && request.resource.data.settlementApplied == false;
+        && request.resource.data.settlementApplied == false
+        && (
+          (
+            request.resource.data.player1Id == request.auth.uid
+            && request.resource.data.player2Id == null
+            && request.resource.data.status == 'waiting'
+            && request.resource.data.matchType in ['regular', 'friendly', 'challenge']
+            && request.resource.data.currentGame == 'none'
+            && request.resource.data.currentGameVersion == 0
+          ) || (
+            request.resource.data.matchType == 'tournament'
+            && request.resource.data.status == 'active'
+            && request.resource.data.currentGame == 'koZnaZna'
+            && request.resource.data.currentGameVersion == 1
+            && request.resource.data.player1Id != request.resource.data.player2Id
+            && request.auth.uid in getAfter(/databases/$(database)/documents/tournaments/$(request.resource.data.tournamentId)).data.participantIds
+            && request.resource.data.player1Id in getAfter(/databases/$(database)/documents/tournaments/$(request.resource.data.tournamentId)).data.participantIds
+            && request.resource.data.player2Id in getAfter(/databases/$(database)/documents/tournaments/$(request.resource.data.tournamentId)).data.participantIds
+          )
+        );
 
       allow update: if signedIn() && (
         (
@@ -340,6 +563,7 @@ service cloud.firestore {
           request.auth.uid in [resource.data.player1Id, resource.data.player2Id]
           && request.resource.data.player1Id == resource.data.player1Id
           && request.resource.data.player2Id == resource.data.player2Id
+          && validGameFlow()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'status', 'currentGame', 'currentGameVersion', 'currentTurnPlayerId',
             'winnerId', 'loserId', 'abandonedByUserId',

@@ -1,0 +1,18 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical"
+    android:padding="18dp" android:background="@color/background">
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/chat_title" android:textSize="28sp" android:textStyle="bold" android:textColor="@color/primary" />
+    <TextView android:id="@+id/text_chat_region" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:textSize="16sp" android:layout_marginBottom="8dp" />
+    <ScrollView android:id="@+id/scroll_chat" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+        <LinearLayout android:id="@+id/container_chat_messages" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" />
+    </ScrollView>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+        <EditText android:id="@+id/input_chat_message" android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:hint="@string/chat_hint" android:maxLength="500" />
+        <Button android:id="@+id/button_send_chat" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="@string/send" />
+    </LinearLayout>
+</LinearLayout>

@@ -28,6 +28,8 @@ public final class Match {
     public boolean player1InGame;
     public boolean player2InGame;
     public boolean settlementApplied;
+    public String tournamentId;
+    public String tournamentStage;
     public List<String> completedGames = new ArrayList<>();
     public Timestamp createdAt;
     public Timestamp startedAt;

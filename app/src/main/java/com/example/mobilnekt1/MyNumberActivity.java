@@ -14,6 +14,7 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.example.mobilnekt1.games.mynumber.ExpressionEvaluator;
+import com.example.mobilnekt1.games.mynumber.ExpressionTokenPolicy;
 import com.example.mobilnekt1.games.mynumber.MyNumberGenerator;
 import com.example.mobilnekt1.games.mynumber.MyNumberRound;
 
@@ -27,7 +28,7 @@ public class MyNumberActivity extends BaseKt1Activity implements SensorEventList
 
     private final Handler rollingHandler = new Handler(Looper.getMainLooper());
     private final Random displayRandom = new Random();
-    private final MyNumberGenerator generator = new MyNumberGenerator();
+    private MyNumberGenerator generator = new MyNumberGenerator();
     private final List<String> expressionTokens = new ArrayList<>();
 
     private TextView headerView;
@@ -56,10 +57,16 @@ public class MyNumberActivity extends BaseKt1Activity implements SensorEventList
     private Integer playerTwoResult;
     private long remainingMillis;
     private long lastShakeTime;
+    private boolean challengeMode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        challengeMode = getIntent().getBooleanExtra(EXTRA_CHALLENGE_GAME, false);
+        if (challengeMode) {
+            String challengeId = getIntent().getStringExtra(ChallengePlayActivity.EXTRA_CHALLENGE_ID);
+            generator = new MyNumberGenerator(challengeId == null ? 0 : challengeId.hashCode());
+        }
         setContentView(R.layout.activity_my_number);
 
         bindViews();
@@ -249,16 +256,22 @@ public class MyNumberActivity extends BaseKt1Activity implements SensorEventList
         if (stage != Stage.PLAYING || !numberButtons[index].isEnabled()) {
             return;
         }
-        appendToken(numberButtons[index].getText().toString());
-        numberButtons[index].setEnabled(false);
+        if (appendToken(numberButtons[index].getText().toString())) {
+            numberButtons[index].setEnabled(false);
+        }
     }
 
-    private void appendToken(String token) {
+    private boolean appendToken(String token) {
         if (stage != Stage.PLAYING) {
-            return;
+            return false;
+        }
+        if (!ExpressionTokenPolicy.canAppend(expressionTokens, token)) {
+            showToast(R.string.invalid_expression_sequence);
+            return false;
         }
         expressionTokens.add(token);
         renderExpression();
+        return true;
     }
 
     private void clearExpression() {
@@ -298,12 +311,34 @@ public class MyNumberActivity extends BaseKt1Activity implements SensorEventList
         }
         if (currentPlayer == 1) {
             playerOneResult = value;
-            showInfoDialog(getString(R.string.player_result_title, 1), formatResult(value));
-            startPlayerTurn(2);
+            if (challengeMode) {
+                scoreSoloRound();
+            } else {
+                showInfoDialog(getString(R.string.player_result_title, 1), formatResult(value));
+                startPlayerTurn(2);
+            }
         } else {
             playerTwoResult = value;
             showInfoDialog(getString(R.string.player_result_title, 2), formatResult(value));
             scoreRound();
+        }
+    }
+
+    private void scoreSoloRound() {
+        stage = Stage.FINISHED;
+        setPlayControlsEnabled(false);
+        if (playerOneResult != null) {
+            playerOneScore += playerOneResult == gameRound.getTarget() ? 10 : 5;
+        }
+        renderScore();
+        String summary = "Vas rezultat: " + formatResult(playerOneResult)
+                + "\nUkupni bodovi: " + playerOneScore;
+        if (roundIndex == 0) {
+            showInfoDialog(getString(R.string.round_result), summary);
+            roundIndex = 1;
+            targetView.postDelayed(this::startNewRound, 1400);
+        } else {
+            showGameFinishDialog(getString(R.string.game_result), summary, playerOneScore);
         }
     }
 
@@ -345,7 +380,8 @@ public class MyNumberActivity extends BaseKt1Activity implements SensorEventList
             roundIndex = 1;
             targetView.postDelayed(this::startNewRound, 1400);
         } else {
-            showFinishDialog(getString(R.string.game_result), summary + "\n" + winnerText());
+            showGameFinishDialog(getString(R.string.game_result), summary + "\n" + winnerText(),
+                    playerOneScore);
         }
     }
 
@@ -366,12 +402,14 @@ public class MyNumberActivity extends BaseKt1Activity implements SensorEventList
     }
 
     private void renderHeader() {
-        headerView.setText(getString(R.string.my_number_header_value,
+        if (challengeMode) headerView.setText("Runda " + (roundIndex + 1) + "/2 | Samostalna igra");
+        else headerView.setText(getString(R.string.my_number_header_value,
                 roundIndex + 1, currentPlayer, roundIndex + 1));
     }
 
     private void renderScore() {
-        pointsView.setText(getString(R.string.two_player_score, playerOneScore, playerTwoScore));
+        if (challengeMode) pointsView.setText("Bodovi: " + playerOneScore);
+        else pointsView.setText(getString(R.string.two_player_score, playerOneScore, playerTwoScore));
     }
 
     private void setPlayControlsEnabled(boolean enabled) {

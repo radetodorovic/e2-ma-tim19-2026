@@ -22,6 +22,8 @@ import java.util.Map;
 import com.example.mobilnekt1.auth.domain.AuthValidator;
 import com.example.mobilnekt1.games.shared.GameActionCallback;
 import com.example.mobilnekt1.profile.data.UserRepository;
+import com.example.mobilnekt1.regions.domain.RegionCatalog;
+import com.example.mobilnekt1.notifications.data.ChatNotificationObserver;
 
 public final class FirebaseAuthRepository {
     private static FirebaseAuthRepository instance;
@@ -105,14 +107,23 @@ public final class FirebaseAuthRepository {
 
             Map<String, Object> profile = new HashMap<>();
             profile.put("email", email);
+            profile.put("isGuest", false);
             profile.put("uid", user.getUid());
             profile.put("username", username);
             profile.put("usernameNormalized", normalizedUsername);
-            profile.put("region", region);
+            String canonicalRegion = RegionCatalog.canonical(region);
+            if (canonicalRegion == null) throw new IllegalStateException("Izaberite podrzan region Srbije.");
+            double[] point = RegionCatalog.pointFor(canonicalRegion, user.getUid());
+            profile.put("region", canonicalRegion);
+            profile.put("regionLatitude", point[0]);
+            profile.put("regionLongitude", point[1]);
             profile.put("tokens", 5);
             profile.put("stars", 0);
             profile.put("weeklyStars", 0);
             profile.put("monthlyStars", 0);
+            profile.put("weeklyMatches", 0);
+            profile.put("monthlyMatches", 0);
+            profile.put("fcmTokens", new java.util.ArrayList<String>());
             profile.put("starTokenProgress", 0);
             profile.put("league", 0);
             profile.put("avatarId", UserRepository.DEFAULT_AVATAR_ID);
@@ -158,6 +169,63 @@ public final class FirebaseAuthRepository {
                     signIn(email, password, callback);
                 })
                 .addOnFailureListener(error -> callback.onError(messageFor(error)));
+    }
+
+    public void loginAsGuest(AuthCallback callback) {
+        if (!ensureConfigured(callback)) return;
+        FirebaseUser current = auth.getCurrentUser();
+        if (current != null && current.isAnonymous()) {
+            createGuestProfile(current, callback);
+            return;
+        }
+        auth.signInAnonymously().addOnSuccessListener(result -> {
+            FirebaseUser user = result.getUser();
+            if (user == null) callback.onError("Gostujuca prijava nije uspela.");
+            else createGuestProfile(user, callback);
+        }).addOnFailureListener(error -> callback.onError(messageFor(error)));
+    }
+
+    private void createGuestProfile(FirebaseUser user, AuthCallback callback) {
+        DocumentReference reference = firestore.collection("users").document(user.getUid());
+        reference.get().addOnSuccessListener(snapshot -> {
+            if (snapshot.exists()) {
+                sessionManager.save(user.getUid(), "", "Gost");
+                callback.onSuccess();
+                return;
+            }
+            Map<String, Object> profile = new HashMap<>();
+            profile.put("uid", user.getUid());
+            profile.put("email", "");
+            profile.put("isGuest", true);
+            profile.put("username", "Gost-" + user.getUid().substring(0, 6));
+            profile.put("usernameNormalized", "guest-" + user.getUid());
+            profile.put("region", "");
+            profile.put("regionLatitude", 0.0);
+            profile.put("regionLongitude", 0.0);
+            profile.put("avatarId", UserRepository.DEFAULT_AVATAR_ID);
+            profile.put("avatarFrame", UserRepository.DEFAULT_AVATAR_FRAME);
+            profile.put("qrCodeValue", "");
+            profile.put("tokens", 5);
+            profile.put("stars", 0);
+            profile.put("weeklyStars", 0);
+            profile.put("monthlyStars", 0);
+            profile.put("weeklyMatches", 0);
+            profile.put("monthlyMatches", 0);
+            profile.put("starTokenProgress", 0);
+            profile.put("league", 0);
+            profile.put("isOnline", false);
+            profile.put("inGame", false);
+            profile.put("activeMatchId", null);
+            profile.put("lastSettledMatchId", null);
+            profile.put("fcmTokens", new java.util.ArrayList<String>());
+            profile.put("lastDailyTokenClaimAt", FieldValue.serverTimestamp());
+            profile.put("createdAt", FieldValue.serverTimestamp());
+            profile.put("updatedAt", FieldValue.serverTimestamp());
+            reference.set(profile).addOnSuccessListener(unused -> {
+                sessionManager.save(user.getUid(), "", (String) profile.get("username"));
+                callback.onSuccess();
+            }).addOnFailureListener(error -> callback.onError(messageFor(error)));
+        }).addOnFailureListener(error -> callback.onError(messageFor(error)));
     }
 
     private void signIn(String email, String password, AuthCallback callback) {
@@ -258,15 +326,22 @@ public final class FirebaseAuthRepository {
     }
 
     public boolean hasVerifiedUser() {
-        return configured && auth.getCurrentUser() != null && auth.getCurrentUser().isEmailVerified()
+        return configured && auth.getCurrentUser() != null
+                && (auth.getCurrentUser().isAnonymous() || auth.getCurrentUser().isEmailVerified())
                 && sessionManager.isLoggedIn();
     }
 
+    public boolean isGuest() {
+        return configured && auth.getCurrentUser() != null && auth.getCurrentUser().isAnonymous();
+    }
+
     public boolean hasUserAwaitingVerification() {
-        return configured && auth.getCurrentUser() != null && !auth.getCurrentUser().isEmailVerified();
+        return configured && auth.getCurrentUser() != null && !auth.getCurrentUser().isAnonymous()
+                && !auth.getCurrentUser().isEmailVerified();
     }
 
     public void logout() {
+        ChatNotificationObserver.stop();
         sessionManager.clear();
         if (!configured || auth.getCurrentUser() == null) {
             if (configured) auth.signOut();
@@ -311,6 +386,8 @@ public final class FirebaseAuthRepository {
                     return "Nema internet konekcije.";
                 case "ERROR_REQUIRES_RECENT_LOGIN":
                     return "Ponovo se prijavite pre promene lozinke.";
+                case "ERROR_ADMIN_RESTRICTED_OPERATION":
+                    return "Gostujuca prijava nije ukljucena u Firebase projektu. U Authentication > Sign-in method ukljucite Anonymous.";
                 default:
                     break;
             }

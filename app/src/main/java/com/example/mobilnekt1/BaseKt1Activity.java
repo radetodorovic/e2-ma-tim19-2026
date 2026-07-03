@@ -1,6 +1,7 @@
 package com.example.mobilnekt1;
 
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -21,6 +22,8 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.ListenerRegistration;
 
 public abstract class BaseKt1Activity extends AppCompatActivity {
+    public static final String EXTRA_CHALLENGE_GAME = "challengeGame";
+    public static final String EXTRA_CHALLENGE_SCORE = "challengeScore";
     private TextView matchHud;
     private ListenerRegistration hudRegistration;
 
@@ -82,6 +85,15 @@ public abstract class BaseKt1Activity extends AppCompatActivity {
                 .setPositiveButton(R.string.ok, (dialog, which) -> finish())
                 .setOnCancelListener(dialog -> finish())
                 .show();
+    }
+
+    protected void showGameFinishDialog(String title, String message, int score) {
+        if (getIntent().getBooleanExtra(EXTRA_CHALLENGE_GAME, false)) {
+            Intent result = new Intent();
+            result.putExtra(EXTRA_CHALLENGE_SCORE, score);
+            setResult(RESULT_OK, result);
+        }
+        showFinishDialog(title, message);
     }
 
     private void attachMatchHud() {

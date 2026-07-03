@@ -12,12 +12,14 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.activity.OnBackPressedCallback;
 
 import com.example.mobilnekt1.match.domain.Match;
+import com.example.mobilnekt1.tournament.data.TournamentRepository;
 import com.example.mobilnekt1.match.domain.MatchGameSequence;
 import com.example.mobilnekt1.match.presentation.MatchLobbyState;
 import com.example.mobilnekt1.match.presentation.MatchLobbyViewModel;
 import com.example.mobilnekt1.core.data.FirebaseProvider;
 import com.example.mobilnekt1.friends.data.FriendsRepository;
 import com.example.mobilnekt1.games.shared.GameActionCallback;
+import com.example.mobilnekt1.missions.data.ClientMissionRepository;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.ListenerRegistration;
 
@@ -42,12 +44,6 @@ public final class MatchLobbyActivity extends BaseKt1Activity {
     private Button createButton;
     private Button randomButton;
     private Button joinButton;
-    private Button quizButton;
-    private Button connectionsButton;
-    private Button stepByStepButton;
-    private Button myNumberButton;
-    private Button associationsButton;
-    private Button skockoButton;
     private String currentMatchId;
     private String currentInviteId;
     private Match currentMatch;
@@ -75,12 +71,6 @@ public final class MatchLobbyActivity extends BaseKt1Activity {
         createButton.setOnClickListener(v -> viewModel.createMatch());
         randomButton.setOnClickListener(v -> viewModel.findRandomMatch());
         joinButton.setOnClickListener(v -> viewModel.joinMatch(codeInput.getText().toString()));
-        quizButton.setOnClickListener(v -> viewModel.selectGame(GAME_QUIZ));
-        connectionsButton.setOnClickListener(v -> viewModel.selectGame(GAME_CONNECTIONS));
-        stepByStepButton.setOnClickListener(v -> viewModel.selectGame(GAME_STEP_BY_STEP));
-        myNumberButton.setOnClickListener(v -> viewModel.selectGame(GAME_MY_NUMBER));
-        associationsButton.setOnClickListener(v -> viewModel.selectGame(GAME_ASSOCIATIONS));
-        skockoButton.setOnClickListener(v -> viewModel.selectGame(GAME_SKOCKO));
         findViewById(R.id.button_lobby_back).setOnClickListener(v -> leaveLobby());
         currentInviteId = getIntent().getStringExtra(EXTRA_MATCH_INVITE_ID);
         String resumeMatchId = getIntent().getStringExtra(EXTRA_MATCH_ID);
@@ -98,18 +88,6 @@ public final class MatchLobbyActivity extends BaseKt1Activity {
         createButton = findViewById(R.id.button_create_match);
         randomButton = findViewById(R.id.button_random_match);
         joinButton = findViewById(R.id.button_join_match);
-        quizButton = findViewById(R.id.button_lobby_quiz);
-        connectionsButton = findViewById(R.id.button_lobby_connections);
-        stepByStepButton = findViewById(R.id.button_lobby_step_by_step);
-        myNumberButton = findViewById(R.id.button_lobby_my_number);
-        associationsButton = findViewById(R.id.button_lobby_associations);
-        skockoButton = findViewById(R.id.button_lobby_skocko);
-        quizButton.setVisibility(View.GONE);
-        connectionsButton.setVisibility(View.GONE);
-        stepByStepButton.setVisibility(View.GONE);
-        myNumberButton.setVisibility(View.GONE);
-        associationsButton.setVisibility(View.GONE);
-        skockoButton.setVisibility(View.GONE);
     }
 
     private void render(MatchLobbyState state) {
@@ -127,12 +105,6 @@ public final class MatchLobbyActivity extends BaseKt1Activity {
             statusView.setText(R.string.create_or_join_match);
             playersView.setText(R.string.waiting_for_match);
             scoreView.setText(R.string.match_score_empty);
-            quizButton.setEnabled(false);
-            connectionsButton.setEnabled(false);
-            stepByStepButton.setEnabled(false);
-            myNumberButton.setEnabled(false);
-            associationsButton.setEnabled(false);
-            skockoButton.setEnabled(false);
         } else {
             currentMatchId = match.id;
             codeView.setText(getString(R.string.match_code_value, match.id));
@@ -156,14 +128,12 @@ public final class MatchLobbyActivity extends BaseKt1Activity {
             scoreView.setText(getString(R.string.match_total_score,
                     match.player1Name, (int) match.player1Score,
                     secondPlayer, (int) match.player2Score, completed, 6));
-            quizButton.setEnabled(canStart(match, GAME_QUIZ, state.loading));
-            connectionsButton.setEnabled(canStart(match, GAME_CONNECTIONS, state.loading));
-            stepByStepButton.setEnabled(canStart(match, GAME_STEP_BY_STEP, state.loading));
-            myNumberButton.setEnabled(canStart(match, GAME_MY_NUMBER, state.loading));
-            associationsButton.setEnabled(canStart(match, GAME_ASSOCIATIONS, state.loading));
-            skockoButton.setEnabled(canStart(match, GAME_SKOCKO, state.loading));
             if (match.isTerminal() && !finalResultShown) {
                 finalResultShown = true;
+                if ("tournament".equals(match.matchType)) {
+                    new TournamentRepository(this).advance(match.tournamentId);
+                }
+                updateDailyMission(match);
                 showInfoDialog(getString(R.string.final_match_result_title), finalResult(match));
             }
         }
@@ -174,8 +144,17 @@ public final class MatchLobbyActivity extends BaseKt1Activity {
         }
     }
 
-    private boolean canStart(Match match, String game, boolean loading) {
-        return match.isActive() && !loading && !match.isGameCompleted(game);
+    private void updateDailyMission(Match match) {
+        if (!match.isFinished()) return;
+        FirebaseUser user = FirebaseProvider.getInstance(this).getCurrentUser();
+        if (user == null) return;
+        ClientMissionRepository missions = new ClientMissionRepository(this);
+        if ("friendly".equals(match.matchType)) {
+            missions.complete(ClientMissionRepository.PLAY_FRIENDLY);
+        } else if (user.getUid().equals(match.winnerId)) {
+            if ("tournament".equals(match.matchType)) missions.complete(ClientMissionRepository.WIN_TOURNAMENT);
+            if ("regular".equals(match.matchType)) missions.complete(ClientMissionRepository.WIN_MATCH);
+        }
     }
 
     private String finalResult(Match match) {

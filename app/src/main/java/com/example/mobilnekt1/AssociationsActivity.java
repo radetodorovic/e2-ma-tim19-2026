@@ -1,12 +1,15 @@
 package com.example.mobilnekt1;
 
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.graphics.Typeface;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import com.example.mobilnekt1.core.data.FirebaseProvider;
+import com.example.mobilnekt1.games.content.GameContentRepository;
 
 public class AssociationsActivity extends BaseKt1Activity {
     private final boolean[][] opened = new boolean[4][4];
@@ -18,10 +21,16 @@ public class AssociationsActivity extends BaseKt1Activity {
     private TextView scoreView;
     private TextView solvedView;
     private EditText finalAnswerInput;
+    private boolean challengeMode;
+    private CountDownTimer timer;
+    private long secondsLeft = 120;
+    private boolean finished;
+    private GameContentRepository.AssociationPuzzle puzzle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        challengeMode = getIntent().getBooleanExtra(EXTRA_CHALLENGE_GAME, false);
         setContentView(R.layout.activity_associations);
 
         scoreView = findViewById(R.id.text_association_score);
@@ -32,9 +41,23 @@ public class AssociationsActivity extends BaseKt1Activity {
 
         fieldButtons = new Button[4][4];
         columnInputs = new EditText[4];
-        buildColumns(container);
-        finalButton.setOnClickListener(v -> checkFinalSolution());
-        renderScore();
+        finalButton.setEnabled(false);
+        new GameContentRepository(FirebaseProvider.getInstance(this).getFirestore())
+                .loadAssociationPuzzle(new GameContentRepository.Callback<GameContentRepository.AssociationPuzzle>() {
+                    @Override public void onSuccess(GameContentRepository.AssociationPuzzle value) {
+                        puzzle = value; buildColumns(container); finalButton.setEnabled(true);
+                        finalButton.setOnClickListener(v -> checkFinalSolution()); renderScore(); startTimer();
+                    }
+                    @Override public void onError(String message) {
+                        showFinishDialog(getString(R.string.associations_title), message);
+                    }
+                });
+    }
+    private void startTimer() {
+        timer = new CountDownTimer(120_000, 250) {
+            @Override public void onTick(long left) { secondsLeft = (long)Math.ceil(left / 1000.0); renderScore(); }
+            @Override public void onFinish() { secondsLeft = 0; finishAssociations(false); }
+        }.start();
     }
 
     private void buildColumns(LinearLayout container) {
@@ -106,7 +129,7 @@ public class AssociationsActivity extends BaseKt1Activity {
         }
         opened[column][row] = true;
         openedFields++;
-        fieldButtons[column][row].setText(MockStudentThreeData.ASSOCIATION.fields[column][row]);
+        fieldButtons[column][row].setText(puzzle.fields.get(column).get(row));
         fieldButtons[column][row].setBackgroundResource(R.drawable.selected_background);
         renderScore();
     }
@@ -121,7 +144,7 @@ public class AssociationsActivity extends BaseKt1Activity {
             showToast(R.string.column_already_solved);
             return;
         }
-        if (answer.equalsIgnoreCase(MockStudentThreeData.ASSOCIATION.columnSolutions[column])) {
+        if (answer.equalsIgnoreCase(puzzle.columnSolutions.get(column))) {
             solvedColumns[column] = true;
             int unopened = 0;
             for (int row = 0; row < 4; row++) {
@@ -130,12 +153,12 @@ public class AssociationsActivity extends BaseKt1Activity {
                     openedFields++;
                 }
                 opened[column][row] = true;
-                fieldButtons[column][row].setText(MockStudentThreeData.ASSOCIATION.fields[column][row]);
+                fieldButtons[column][row].setText(puzzle.fields.get(column).get(row));
                 fieldButtons[column][row].setEnabled(false);
                 fieldButtons[column][row].setBackgroundResource(R.drawable.paired_background);
             }
             score += 2 + unopened;
-            columnInputs[column].setText(MockStudentThreeData.ASSOCIATION.columnSolutions[column]);
+            columnInputs[column].setText(puzzle.columnSolutions.get(column));
             columnInputs[column].setEnabled(false);
             renderScore();
             renderSolved();
@@ -150,26 +173,24 @@ public class AssociationsActivity extends BaseKt1Activity {
             showToast(R.string.empty_fields);
             return;
         }
-        if (answer.equalsIgnoreCase(MockStudentThreeData.ASSOCIATION.finalSolution)) {
+        if (answer.equalsIgnoreCase(puzzle.finalSolution)) {
             int unopenedColumns = 0;
             for (boolean solvedColumn : solvedColumns) {
                 if (!solvedColumn) {
                     unopenedColumns++;
                 }
             }
-            score += 3 + unopenedColumns * 6;
-            showFinishDialog(getString(R.string.round_result),
-                    "Asocijacije su zavrsene u KT1 mock rezimu."
-                            + "\nKonacno resenje: " + MockStudentThreeData.ASSOCIATION.finalSolution
-                            + "\nIgrac 1: " + score + " bodova"
-                            + "\nIgrac 2: 18 bodova");
+            score += 7 + unopenedColumns * 6;
+            finishAssociations(true);
         } else {
             showToast(R.string.incorrect_answer);
         }
     }
 
     private void renderScore() {
-        scoreView.setText("Runda 1/2 | Timer: 02:00 | Otvoreno: " + openedFields + " | Bodovi: " + score);
+        scoreView.setText((challengeMode ? "Samostalna igra" : "Runda 1/2")
+                + " | Timer: " + String.format(java.util.Locale.getDefault(), "%02d:%02d", secondsLeft / 60, secondsLeft % 60)
+                + " | Otvoreno: " + openedFields + " | Bodovi: " + score);
     }
 
     private void renderSolved() {
@@ -177,9 +198,16 @@ public class AssociationsActivity extends BaseKt1Activity {
         for (int i = 0; i < solvedColumns.length; i++) {
             if (solvedColumns[i]) {
                 text += (char) ('A' + i) + ": "
-                        + MockStudentThreeData.ASSOCIATION.columnSolutions[i] + "\n";
+                        + puzzle.columnSolutions.get(i) + "\n";
             }
         }
         solvedView.setText(text.trim().isEmpty() ? getString(R.string.no_solved_columns) : text.trim());
     }
+    private void finishAssociations(boolean solved) {
+        if (finished) return; finished = true; if (timer != null) timer.cancel();
+        String text = (solved ? "Konacno resenje: " + puzzle.finalSolution : "Vreme je isteklo.")
+                + (challengeMode ? "\nVasi bodovi: " + score : "\nIgrac 1: " + score + " bodova\nIgrac 2: 18 bodova");
+        showGameFinishDialog(getString(R.string.round_result), text, score);
+    }
+    @Override protected void onDestroy() { if (timer != null) timer.cancel(); super.onDestroy(); }
 }

@@ -1,9 +1,13 @@
 package com.example.mobilnekt1;
 
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import com.example.mobilnekt1.core.data.FirebaseProvider;
+import com.example.mobilnekt1.games.content.GameContentRepository;
+import java.util.List;
 
 public class ConnectionsActivity extends BaseKt1Activity {
     private int currentLeft = 0;
@@ -16,30 +20,39 @@ public class ConnectionsActivity extends BaseKt1Activity {
     private TextView scoreView;
     private TextView pairsView;
     private String pairsText = "";
+    private boolean challengeMode;
+    private CountDownTimer timer;
+    private boolean finished;
+    private GameContentRepository.ConnectionsPuzzle puzzle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        challengeMode = getIntent().getBooleanExtra(EXTRA_CHALLENGE_GAME, false);
         setContentView(R.layout.activity_connections);
 
         scoreView = findViewById(R.id.text_connections_score);
         pairsView = findViewById(R.id.text_connected_pairs);
         LinearLayout leftContainer = findViewById(R.id.container_left_terms);
         LinearLayout rightContainer = findViewById(R.id.container_right_terms);
-        leftButtons = new Button[MockStudentTwoData.CONNECTION_LEFT.length];
-        rightButtons = new Button[MockStudentTwoData.CONNECTION_RIGHT.length];
-
-        buildColumn(leftContainer, true);
-        buildColumn(rightContainer, false);
-        renderSelection();
-        renderScore();
+        new GameContentRepository(FirebaseProvider.getInstance(this).getFirestore())
+                .loadConnectionsPuzzles(new GameContentRepository.Callback<List<GameContentRepository.ConnectionsPuzzle>>() {
+                    @Override public void onSuccess(List<GameContentRepository.ConnectionsPuzzle> values) {
+                        puzzle = values.get(0); leftButtons = new Button[puzzle.leftItems.size()];
+                        rightButtons = new Button[puzzle.rightItems.size()]; buildColumn(leftContainer, true);
+                        buildColumn(rightContainer, false); renderSelection(); renderScore(); startTimer();
+                    }
+                    @Override public void onError(String message) {
+                        showFinishDialog(getString(R.string.connections_title), message);
+                    }
+                });
     }
 
     private void buildColumn(LinearLayout container, boolean left) {
-        String[] values = left ? MockStudentTwoData.CONNECTION_LEFT : MockStudentTwoData.CONNECTION_RIGHT;
-        for (int i = 0; i < values.length; i++) {
+        List<String> values = left ? puzzle.leftItems : puzzle.rightItems;
+        for (int i = 0; i < values.size(); i++) {
             Button button = new Button(this);
-            button.setText(values[i]);
+            button.setText(values.get(i));
             button.setAllCaps(false);
             button.setTextColor(getResources().getColor(R.color.text_primary));
             button.setBackgroundResource(R.drawable.button_outline);
@@ -69,7 +82,7 @@ public class ConnectionsActivity extends BaseKt1Activity {
         }
 
         answerLocked = true;
-        boolean correct = MockStudentTwoData.CONNECTION_MATCHES[currentLeft] == selectedRight;
+        boolean correct = puzzle.correctMatches.get(currentLeft) == selectedRight;
         playedTerms++;
         if (correct) {
             playerScore += 2;
@@ -78,8 +91,8 @@ public class ConnectionsActivity extends BaseKt1Activity {
             rightButtons[selectedRight].setEnabled(false);
             leftButtons[currentLeft].setBackgroundResource(R.drawable.paired_background);
             rightButtons[selectedRight].setBackgroundResource(R.drawable.paired_background);
-            pairsText += MockStudentTwoData.CONNECTION_LEFT[currentLeft]
-                    + " - " + MockStudentTwoData.CONNECTION_RIGHT[selectedRight] + "\n";
+            pairsText += puzzle.leftItems.get(currentLeft)
+                    + " - " + puzzle.rightItems.get(selectedRight) + "\n";
             pairsView.setText(pairsText.trim());
         } else {
             leftButtons[currentLeft].setEnabled(false);
@@ -91,12 +104,8 @@ public class ConnectionsActivity extends BaseKt1Activity {
         moveToNextLeft();
         answerLocked = false;
         renderScore();
-        if (playedTerms == MockStudentTwoData.CONNECTION_LEFT.length) {
-            showFinishDialog(getString(R.string.round_result),
-                    "Runda Spojnica je zavrsena."
-                            + "\nIgrac 1: " + playerScore + " bodova"
-                            + "\nIgrac 2: 4 boda"
-                            + "\nDruga runda i protivnik su prikazani kao KT1 mock.");
+        if (playedTerms == puzzle.leftItems.size()) {
+            finishConnections();
         }
     }
 
@@ -124,6 +133,22 @@ public class ConnectionsActivity extends BaseKt1Activity {
     }
 
     private void renderScore() {
-        scoreView.setText("Igrac 1: " + playerScore + "  |  Igrac 2: 4");
+        scoreView.setText(scoreText());
     }
+    private String scoreText() { return challengeMode ? "Bodovi: " + playerScore
+            : "Igrac 1: " + playerScore + "  |  Igrac 2: 4"; }
+    private String seconds(long left) { return String.format(java.util.Locale.getDefault(), "00:%02d", (int)Math.ceil(left / 1000.0)); }
+    private void startTimer() {
+        timer = new CountDownTimer(30_000, 250) {
+            @Override public void onTick(long left) { scoreView.setText(scoreText() + " | Timer: " + seconds(left)); }
+            @Override public void onFinish() { finishConnections(); }
+        }.start();
+    }
+    private void finishConnections() {
+        if (finished) return; finished = true; if (timer != null) timer.cancel();
+        String text = challengeMode ? "Spojnice su zavrsene.\nVasi bodovi: " + playerScore
+                : "Spojnice su zavrsene.\nIgrac 1: " + playerScore + "\nIgrac 2: 4";
+        showGameFinishDialog(getString(R.string.round_result), text, playerScore);
+    }
+    @Override protected void onDestroy() { if (timer != null) timer.cancel(); super.onDestroy(); }
 }

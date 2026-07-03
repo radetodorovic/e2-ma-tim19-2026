@@ -1,10 +1,12 @@
 package com.example.mobilnekt1;
 
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.widget.Button;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import com.example.mobilnekt1.games.skocko.domain.SkockoEngine;
 
 public class SkockoActivity extends BaseKt1Activity {
     private int attempt = 0;
@@ -13,10 +15,17 @@ public class SkockoActivity extends BaseKt1Activity {
     private TextView statusView;
     private TextView guessView;
     private LinearLayout historyContainer;
+    private boolean challengeMode;
+    private CountDownTimer timer;
+    private long secondsLeft = 30;
+    private boolean finished;
+    private int[] solution;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        challengeMode = getIntent().getBooleanExtra(EXTRA_CHALLENGE_GAME, false);
+        solution = SkockoEngine.solutionForSeed(getIntent().getStringExtra(ChallengePlayActivity.EXTRA_CHALLENGE_ID));
         setContentView(R.layout.activity_skocko);
 
         statusView = findViewById(R.id.text_skocko_status);
@@ -31,12 +40,16 @@ public class SkockoActivity extends BaseKt1Activity {
         clearButton.setOnClickListener(v -> clearAttempt());
         renderStatus();
         renderGuess();
+        timer = new CountDownTimer(30_000, 250) {
+            @Override public void onTick(long left) { secondsLeft = (long)Math.ceil(left / 1000.0); renderStatus(); }
+            @Override public void onFinish() { secondsLeft = 0; finishSkocko(0, false); }
+        }.start();
     }
 
     private void buildSymbols(GridLayout container) {
-        for (int i = 0; i < MockStudentThreeData.SKOCKO_SYMBOLS.length; i++) {
+        for (int i = 0; i < SkockoEngine.SYMBOLS.length; i++) {
             Button button = new Button(this);
-            button.setText(MockStudentThreeData.SKOCKO_SYMBOLS[i]);
+            button.setText(SkockoEngine.SYMBOLS[i]);
             button.setAllCaps(false);
             button.setTextColor(getResources().getColor(R.color.text_primary));
             button.setBackgroundResource(R.drawable.button_outline);
@@ -65,48 +78,21 @@ public class SkockoActivity extends BaseKt1Activity {
             showToast(R.string.choose_four_symbols);
             return;
         }
-        int exact = 0;
-        int misplaced = 0;
-        boolean[] usedSolution = new boolean[4];
-        boolean[] usedGuess = new boolean[4];
-
-        for (int i = 0; i < 4; i++) {
-            if (guesses[attempt][i] == MockStudentThreeData.SKOCKO_COMBINATION[i]) {
-                exact++;
-                usedSolution[i] = true;
-                usedGuess[i] = true;
-            }
-        }
-        for (int i = 0; i < 4; i++) {
-            if (usedGuess[i]) {
-                continue;
-            }
-            for (int j = 0; j < 4; j++) {
-                if (!usedSolution[j] && guesses[attempt][i] == MockStudentThreeData.SKOCKO_COMBINATION[j]) {
-                    misplaced++;
-                    usedSolution[j] = true;
-                    break;
-                }
-            }
-        }
+        SkockoEngine.Result evaluated = SkockoEngine.evaluate(solution, guesses[attempt]);
+        int exact = evaluated.exact;
+        int misplaced = evaluated.misplaced;
 
         addHistory(exact, misplaced);
         if (exact == 4) {
-            int points = attempt < 2 ? 20 : attempt < 4 ? 15 : 10;
-            showFinishDialog(getString(R.string.round_result),
-                    "Skocko je resen u " + (attempt + 1) + ". pokusaju."
-                            + "\nIgrac 1: " + points + " bodova"
-                            + "\nIgrac 2: 15 bodova"
-                            + "\nDruga runda je KT1 mock.");
+            int points = SkockoEngine.pointsForAttempt(attempt + 1);
+            finishSkocko(points, true);
             return;
         }
 
         attempt++;
         slot = 0;
         if (attempt >= 6) {
-            showFinishDialog(getString(R.string.round_result),
-                    "Skocko nije resen u 6 pokusaja."
-                            + "\nProtivnikova sansa od 10 sekundi je prikazana kao KT1 mock.");
+            finishSkocko(0, false);
             return;
         }
         renderStatus();
@@ -130,7 +116,7 @@ public class SkockoActivity extends BaseKt1Activity {
     private String buildGuessText() {
         String text = "";
         for (int i = 0; i < slot; i++) {
-            text += MockStudentThreeData.SKOCKO_SYMBOLS[guesses[attempt][i]];
+            text += SkockoEngine.SYMBOLS[guesses[attempt][i]];
             if (i < slot - 1) {
                 text += " - ";
             }
@@ -139,10 +125,19 @@ public class SkockoActivity extends BaseKt1Activity {
     }
 
     private void renderStatus() {
-        statusView.setText("Runda 1/2 | Timer: 00:30 | Pokusaj " + (attempt + 1) + "/6");
+        statusView.setText((challengeMode ? "Samostalna igra" : "Runda 1/2")
+                + " | Timer: " + String.format(java.util.Locale.getDefault(), "00:%02d", secondsLeft)
+                + " | Pokusaj " + Math.min(attempt + 1, 6) + "/6");
     }
 
     private void renderGuess() {
         guessView.setText("Trenutna kombinacija: " + buildGuessText());
     }
+    private void finishSkocko(int points, boolean solved) {
+        if (finished) return; finished = true; if (timer != null) timer.cancel();
+        String text = solved ? "Skocko je resen u " + (attempt + 1) + ". pokusaju." : "Skocko nije resen.";
+        text += challengeMode ? "\nVasi bodovi: " + points : "\nIgrac 1: " + points + " bodova\nIgrac 2: 15 bodova";
+        showGameFinishDialog(getString(R.string.round_result), text, points);
+    }
+    @Override protected void onDestroy() { if (timer != null) timer.cancel(); super.onDestroy(); }
 }

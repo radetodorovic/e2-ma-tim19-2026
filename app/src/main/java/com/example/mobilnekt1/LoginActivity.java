@@ -19,6 +19,7 @@ public class LoginActivity extends BaseKt1Activity {
     private EditText identifierInput;
     private EditText passwordInput;
     private Button loginButton;
+    private Button guestLoginButton;
     private ProgressBar progressBar;
     private AuthViewModel viewModel;
 
@@ -30,6 +31,7 @@ public class LoginActivity extends BaseKt1Activity {
         identifierInput = findViewById(R.id.input_identifier);
         passwordInput = findViewById(R.id.input_password);
         loginButton = findViewById(R.id.button_login);
+        guestLoginButton = findViewById(R.id.button_guest_login);
         progressBar = findViewById(R.id.auth_progress);
         TextView registerLink = findViewById(R.id.link_register);
         TextView resetLink = findViewById(R.id.link_reset_password);
@@ -38,6 +40,7 @@ public class LoginActivity extends BaseKt1Activity {
         observeViewModel();
 
         loginButton.setOnClickListener(v -> handleLogin());
+        guestLoginButton.setOnClickListener(v -> viewModel.loginAsGuest());
         registerLink.setOnClickListener(v -> startActivity(new Intent(this, RegisterActivity.class)));
         resetLink.setOnClickListener(v -> startActivity(new Intent(this, ResetPasswordActivity.class)));
 
@@ -52,6 +55,7 @@ public class LoginActivity extends BaseKt1Activity {
         viewModel.getLoading().observe(this, loading -> {
             boolean isLoading = Boolean.TRUE.equals(loading);
             loginButton.setEnabled(!isLoading);
+            guestLoginButton.setEnabled(!isLoading);
             progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
         });
         viewModel.getResult().observe(this, event -> {

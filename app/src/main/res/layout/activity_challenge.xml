@@ -1,0 +1,26 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/background">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="24dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/challenges_title" android:textColor="@color/primary"
+            android:textSize="28sp" android:textStyle="bold" />
+        <EditText android:id="@+id/input_challenge_stars"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="18dp" android:background="@drawable/input_background"
+            android:hint="@string/challenge_star_stake" android:inputType="number" />
+        <EditText android:id="@+id/input_challenge_tokens"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="10dp" android:background="@drawable/input_background"
+            android:hint="@string/challenge_token_stake" android:inputType="number" />
+        <Button android:id="@+id/button_create_challenge"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="12dp" android:background="@drawable/button_primary"
+            android:text="@string/challenge_create" android:textAllCaps="false"
+            android:textColor="@android:color/white" />
+        <LinearLayout android:id="@+id/container_challenges"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="20dp" android:orientation="vertical" />
+    </LinearLayout>
+</ScrollView>

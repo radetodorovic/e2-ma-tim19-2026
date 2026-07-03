@@ -1,0 +1,17 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/background">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="24dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Turnir" android:textSize="28sp" android:textStyle="bold" android:textColor="@color/primary" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" android:text="Ucesce kosta 3 tokena. Potrebna su cetiri igraca." />
+        <Button android:id="@+id/button_create_tournament" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="16dp"
+            android:background="@drawable/button_primary" android:text="Napravi turnir"
+            android:textAllCaps="false" android:textColor="@android:color/white" />
+        <LinearLayout android:id="@+id/container_tournaments" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="20dp" android:orientation="vertical" />
+    </LinearLayout>
+</ScrollView>

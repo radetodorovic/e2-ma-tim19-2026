@@ -60,15 +60,6 @@ public final class MatchLobbyViewModel extends AndroidViewModel {
         repository.joinMatch(code, operationCallback());
     }
 
-    public void selectGame(String game) {
-        if (matchId == null) {
-            showError("Prvo kreirajte partiju ili se pridruzite postojecoj.");
-            return;
-        }
-        setLoading();
-        repository.selectGame(matchId, game, operationCallback());
-    }
-
     public void abandonMatch() {
         if (matchId == null) {
             showError("Nema partije za napustanje.");

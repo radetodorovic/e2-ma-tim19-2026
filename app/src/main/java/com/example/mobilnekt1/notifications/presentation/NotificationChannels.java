@@ -10,6 +10,7 @@ import android.os.Build;
 import android.content.pm.PackageManager;
 
 import com.example.mobilnekt1.NotificationsActivity;
+import com.example.mobilnekt1.ChatActivity;
 import com.example.mobilnekt1.notifications.domain.NotificationItem;
 
 public final class NotificationChannels {
@@ -34,7 +35,8 @@ public final class NotificationChannels {
                 && context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED) return;
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        Intent intent = new Intent(context, NotificationsActivity.class);
+        Intent intent = new Intent(context, CHAT.equals(item.channel)
+                ? ChatActivity.class : NotificationsActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, item.id.hashCode(), intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         Notification.Builder builder = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O

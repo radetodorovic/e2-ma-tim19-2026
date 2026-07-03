@@ -13,6 +13,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.mobilnekt1.auth.domain.AuthValidator;
 import com.example.mobilnekt1.auth.presentation.AuthResult;
 import com.example.mobilnekt1.auth.presentation.AuthViewModel;
+import com.example.mobilnekt1.regions.domain.RegionCatalog;
 
 public class RegisterActivity extends BaseKt1Activity {
     private EditText emailInput;
@@ -85,6 +86,10 @@ public class RegisterActivity extends BaseKt1Activity {
         }
         if (region.isEmpty()) {
             regionInput.setError(getString(R.string.required_field));
+            return;
+        }
+        if (!RegionCatalog.isSupported(region)) {
+            regionInput.setError(getString(R.string.supported_regions));
             return;
         }
         if (!AuthValidator.isStrongPassword(password)) {

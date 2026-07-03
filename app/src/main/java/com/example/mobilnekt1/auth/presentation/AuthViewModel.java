@@ -36,6 +36,10 @@ public final class AuthViewModel extends AndroidViewModel {
         execute(callback -> repository.login(identifier, password, callback));
     }
 
+    public void loginAsGuest() {
+        execute(repository::loginAsGuest);
+    }
+
     public void checkEmailVerification() {
         execute(repository::checkEmailVerification);
     }
@@ -54,6 +58,10 @@ public final class AuthViewModel extends AndroidViewModel {
 
     public boolean hasVerifiedUser() {
         return repository.hasVerifiedUser();
+    }
+
+    public boolean isGuest() {
+        return repository.isGuest();
     }
 
     public boolean hasUserAwaitingVerification() {
